@@ -1,12 +1,14 @@
 import { useState } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { 
   Camera, Calendar, Lightbulb, FolderOpen, LayoutGrid, Settings, LogOut,
   Plus, ChevronLeft, ChevronRight, Search, Bell, MoreHorizontal,
-  Video, Image, MessageSquare, Target, Sparkles
+  Video, Image, MessageSquare, Target, Sparkles, Loader2, Copy, Check, X, Hash
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 type ContentStatus = "ideia" | "producao" | "pronto" | "publicado";
 type ContentType = "reels" | "carrossel" | "stories";
@@ -19,6 +21,15 @@ interface ContentItem {
   objective: string;
   date: string;
   eventType: string;
+}
+
+interface GeneratedContent {
+  titulo: string;
+  ideia: string;
+  roteiro: string;
+  legenda: string;
+  cta: string;
+  hashtags: string[];
 }
 
 const sampleContent: ContentItem[] = [
@@ -89,9 +100,27 @@ const typeIcons: Record<ContentType, React.ElementType> = {
   stories: MessageSquare,
 };
 
+const contentTypes = [
+  { id: "reels" as const, label: "Reels", icon: Video },
+  { id: "carrossel" as const, label: "Carrossel", icon: Image },
+  { id: "stories" as const, label: "Stories", icon: MessageSquare },
+];
+
+const eventTypes = ["Casamento", "Corporativo", "15 Anos", "Infantil", "Formatura"];
+const objectives = ["Atração", "Autoridade", "Prova Social", "Venda"];
+
 const Dashboard = () => {
+  const { toast } = useToast();
   const [activeView, setActiveView] = useState<"calendario" | "conteudos" | "biblioteca" | "gerador">("calendario");
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  
+  // Generator state
+  const [selectedContentType, setSelectedContentType] = useState<ContentType>("reels");
+  const [selectedEventType, setSelectedEventType] = useState("Casamento");
+  const [selectedObjective, setSelectedObjective] = useState("Autoridade");
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [generatedContent, setGeneratedContent] = useState<GeneratedContent | null>(null);
+  const [copiedField, setCopiedField] = useState<string | null>(null);
 
   const navItems = [
     { id: "calendario" as const, label: "Calendário", icon: Calendar },
@@ -106,6 +135,53 @@ const Dashboard = () => {
     { label: "Prontos", value: 1, color: "text-info" },
     { label: "Publicados", value: 1, color: "text-success" },
   ];
+
+  const handleGenerate = async () => {
+    setIsGenerating(true);
+    setGeneratedContent(null);
+
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-content', {
+        body: {
+          contentType: selectedContentType,
+          eventType: selectedEventType,
+          objective: selectedObjective,
+        }
+      });
+
+      if (error) throw error;
+
+      setGeneratedContent(data);
+      toast({
+        title: "Conteúdo gerado!",
+        description: "Seu conteúdo foi criado com sucesso.",
+      });
+    } catch (error: unknown) {
+      console.error('Error generating content:', error);
+      const errorMessage = error instanceof Error ? error.message : "Erro ao gerar conteúdo. Tente novamente.";
+      toast({
+        title: "Erro",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const copyToClipboard = async (text: string, fieldName: string) => {
+    await navigator.clipboard.writeText(text);
+    setCopiedField(fieldName);
+    setTimeout(() => setCopiedField(null), 2000);
+    toast({
+      title: "Copiado!",
+      description: `${fieldName} copiado para a área de transferência.`,
+    });
+  };
+
+  const clearGeneratedContent = () => {
+    setGeneratedContent(null);
+  };
 
   return (
     <div className="min-h-screen bg-background flex">
@@ -237,7 +313,7 @@ const Dashboard = () => {
                     </button>
                   </div>
                 </div>
-                <Button className="gap-2">
+                <Button className="gap-2" onClick={() => setActiveView("gerador")}>
                   <Plus className="w-4 h-4" />
                   Novo conteúdo
                 </Button>
@@ -257,7 +333,7 @@ const Dashboard = () => {
                 {/* Calendar days */}
                 <div className="grid grid-cols-7">
                   {Array.from({ length: 35 }, (_, i) => {
-                    const day = i - 0; // Offset for starting day
+                    const day = i - 0;
                     const isCurrentMonth = day >= 1 && day <= 31;
                     const content = sampleContent.find(c => {
                       const contentDay = parseInt(c.date.split("-")[2]);
@@ -315,7 +391,7 @@ const Dashboard = () => {
                   <option>Stories</option>
                 </select>
                 <div className="flex-1" />
-                <Button className="gap-2">
+                <Button className="gap-2" onClick={() => setActiveView("gerador")}>
                   <Plus className="w-4 h-4" />
                   Novo conteúdo
                 </Button>
@@ -364,74 +440,255 @@ const Dashboard = () => {
           )}
 
           {activeView === "gerador" && (
-            <div className="max-w-2xl mx-auto space-y-8">
+            <div className="max-w-4xl mx-auto space-y-8">
               <div className="text-center">
                 <div className="w-16 h-16 rounded-2xl gradient-primary flex items-center justify-center mx-auto mb-4">
                   <Sparkles className="w-8 h-8 text-primary-foreground" />
                 </div>
                 <h2 className="text-2xl font-bold text-foreground mb-2">
-                  Gerador de Conteúdo
+                  Gerador de Conteúdo com IA
                 </h2>
                 <p className="text-muted-foreground">
-                  Crie conteúdo completo em segundos
+                  Crie roteiros, legendas e hashtags em segundos
                 </p>
               </div>
 
-              <div className="bg-card rounded-xl p-6 border border-border space-y-6">
-                <div>
-                  <label className="block text-sm font-medium text-foreground mb-2">
-                    Tipo de conteúdo
-                  </label>
-                  <div className="grid grid-cols-3 gap-3">
-                    {[
-                      { id: "reels", label: "Reels", icon: Video },
-                      { id: "carrossel", label: "Carrossel", icon: Image },
-                      { id: "stories", label: "Stories", icon: MessageSquare },
-                    ].map((type) => (
-                      <button
-                        key={type.id}
-                        className="p-4 rounded-xl border-2 border-border hover:border-primary/30 transition-all text-center"
-                      >
-                        <type.icon className="w-6 h-6 mx-auto mb-2 text-primary" />
-                        <span className="text-sm font-medium text-foreground">{type.label}</span>
-                      </button>
-                    ))}
+              <div className="grid lg:grid-cols-2 gap-6">
+                {/* Form */}
+                <div className="bg-card rounded-xl p-6 border border-border space-y-6">
+                  <div>
+                    <label className="block text-sm font-medium text-foreground mb-3">
+                      Tipo de conteúdo
+                    </label>
+                    <div className="grid grid-cols-3 gap-3">
+                      {contentTypes.map((type) => (
+                        <button
+                          key={type.id}
+                          onClick={() => setSelectedContentType(type.id)}
+                          className={`p-4 rounded-xl border-2 transition-all text-center ${
+                            selectedContentType === type.id
+                              ? "border-primary bg-primary/5"
+                              : "border-border hover:border-primary/30"
+                          }`}
+                        >
+                          <type.icon className={`w-6 h-6 mx-auto mb-2 ${selectedContentType === type.id ? "text-primary" : "text-muted-foreground"}`} />
+                          <span className={`text-sm font-medium ${selectedContentType === type.id ? "text-primary" : "text-foreground"}`}>{type.label}</span>
+                        </button>
+                      ))}
+                    </div>
                   </div>
-                </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-foreground mb-2">
-                    Tipo de evento
-                  </label>
-                  <select className="w-full px-4 py-3 rounded-xl border border-border bg-background text-foreground focus:outline-none focus:border-primary">
-                    <option>Casamento</option>
-                    <option>Corporativo</option>
-                    <option>15 Anos</option>
-                    <option>Infantil</option>
-                    <option>Formatura</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-foreground mb-2">
-                    Objetivo do post
-                  </label>
-                  <div className="grid grid-cols-2 gap-3">
-                    {["Atração", "Autoridade", "Prova Social", "Venda"].map((obj) => (
-                      <button
-                        key={obj}
-                        className="p-3 rounded-xl border-2 border-border hover:border-primary/30 transition-all text-sm font-medium text-foreground"
-                      >
-                        {obj}
-                      </button>
-                    ))}
+                  <div>
+                    <label className="block text-sm font-medium text-foreground mb-2">
+                      Tipo de evento
+                    </label>
+                    <select 
+                      value={selectedEventType}
+                      onChange={(e) => setSelectedEventType(e.target.value)}
+                      className="w-full px-4 py-3 rounded-xl border border-border bg-background text-foreground focus:outline-none focus:border-primary"
+                    >
+                      {eventTypes.map(event => (
+                        <option key={event} value={event}>{event}</option>
+                      ))}
+                    </select>
                   </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-foreground mb-3">
+                      Objetivo do post
+                    </label>
+                    <div className="grid grid-cols-2 gap-3">
+                      {objectives.map((obj) => (
+                        <button
+                          key={obj}
+                          onClick={() => setSelectedObjective(obj)}
+                          className={`p-3 rounded-xl border-2 transition-all text-sm font-medium ${
+                            selectedObjective === obj
+                              ? "border-primary bg-primary/5 text-primary"
+                              : "border-border hover:border-primary/30 text-foreground"
+                          }`}
+                        >
+                          {obj}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <Button 
+                    variant="hero" 
+                    size="lg" 
+                    className="w-full gap-2"
+                    onClick={handleGenerate}
+                    disabled={isGenerating}
+                  >
+                    {isGenerating ? (
+                      <>
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                        Gerando...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="w-5 h-5" />
+                        Gerar conteúdo
+                      </>
+                    )}
+                  </Button>
                 </div>
 
-                <Button variant="hero" size="lg" className="w-full gap-2">
-                  <Sparkles className="w-5 h-5" />
-                  Gerar conteúdo
-                </Button>
+                {/* Result */}
+                <AnimatePresence mode="wait">
+                  {isGenerating ? (
+                    <motion.div
+                      key="loading"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      className="bg-card rounded-xl p-6 border border-border flex items-center justify-center min-h-[400px]"
+                    >
+                      <div className="text-center">
+                        <Loader2 className="w-12 h-12 text-primary animate-spin mx-auto mb-4" />
+                        <p className="text-muted-foreground">Gerando conteúdo com IA...</p>
+                        <p className="text-sm text-muted-foreground mt-1">Isso pode levar alguns segundos</p>
+                      </div>
+                    </motion.div>
+                  ) : generatedContent ? (
+                    <motion.div
+                      key="result"
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0 }}
+                      className="bg-card rounded-xl border border-border overflow-hidden"
+                    >
+                      {/* Header */}
+                      <div className="p-4 border-b border-border flex items-center justify-between bg-muted/30">
+                        <div className="flex items-center gap-2">
+                          <Sparkles className="w-5 h-5 text-primary" />
+                          <span className="font-semibold text-foreground">Conteúdo Gerado</span>
+                        </div>
+                        <button 
+                          onClick={clearGeneratedContent}
+                          className="p-1.5 rounded-lg hover:bg-muted transition-colors"
+                        >
+                          <X className="w-4 h-4 text-muted-foreground" />
+                        </button>
+                      </div>
+
+                      {/* Content */}
+                      <div className="p-4 space-y-4 max-h-[500px] overflow-y-auto">
+                        {/* Title */}
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-medium text-primary uppercase tracking-wide">Título</span>
+                            <button 
+                              onClick={() => copyToClipboard(generatedContent.titulo, "Título")}
+                              className="p-1 rounded hover:bg-muted transition-colors"
+                            >
+                              {copiedField === "Título" ? <Check className="w-4 h-4 text-success" /> : <Copy className="w-4 h-4 text-muted-foreground" />}
+                            </button>
+                          </div>
+                          <p className="font-semibold text-foreground">{generatedContent.titulo}</p>
+                        </div>
+
+                        {/* Idea */}
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-medium text-primary uppercase tracking-wide">Ideia</span>
+                            <button 
+                              onClick={() => copyToClipboard(generatedContent.ideia, "Ideia")}
+                              className="p-1 rounded hover:bg-muted transition-colors"
+                            >
+                              {copiedField === "Ideia" ? <Check className="w-4 h-4 text-success" /> : <Copy className="w-4 h-4 text-muted-foreground" />}
+                            </button>
+                          </div>
+                          <p className="text-sm text-muted-foreground">{generatedContent.ideia}</p>
+                        </div>
+
+                        {/* Script */}
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-medium text-primary uppercase tracking-wide">Roteiro</span>
+                            <button 
+                              onClick={() => copyToClipboard(generatedContent.roteiro, "Roteiro")}
+                              className="p-1 rounded hover:bg-muted transition-colors"
+                            >
+                              {copiedField === "Roteiro" ? <Check className="w-4 h-4 text-success" /> : <Copy className="w-4 h-4 text-muted-foreground" />}
+                            </button>
+                          </div>
+                          <div className="bg-muted/50 rounded-lg p-3 text-sm text-foreground whitespace-pre-wrap">
+                            {generatedContent.roteiro}
+                          </div>
+                        </div>
+
+                        {/* Caption */}
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-medium text-primary uppercase tracking-wide">Legenda</span>
+                            <button 
+                              onClick={() => copyToClipboard(generatedContent.legenda, "Legenda")}
+                              className="p-1 rounded hover:bg-muted transition-colors"
+                            >
+                              {copiedField === "Legenda" ? <Check className="w-4 h-4 text-success" /> : <Copy className="w-4 h-4 text-muted-foreground" />}
+                            </button>
+                          </div>
+                          <div className="bg-muted/50 rounded-lg p-3 text-sm text-foreground whitespace-pre-wrap">
+                            {generatedContent.legenda}
+                          </div>
+                        </div>
+
+                        {/* CTA */}
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-medium text-primary uppercase tracking-wide">CTA</span>
+                            <button 
+                              onClick={() => copyToClipboard(generatedContent.cta, "CTA")}
+                              className="p-1 rounded hover:bg-muted transition-colors"
+                            >
+                              {copiedField === "CTA" ? <Check className="w-4 h-4 text-success" /> : <Copy className="w-4 h-4 text-muted-foreground" />}
+                            </button>
+                          </div>
+                          <p className="text-sm font-medium text-primary">{generatedContent.cta}</p>
+                        </div>
+
+                        {/* Hashtags */}
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-medium text-primary uppercase tracking-wide flex items-center gap-1">
+                              <Hash className="w-3 h-3" />
+                              Hashtags
+                            </span>
+                            <button 
+                              onClick={() => copyToClipboard(generatedContent.hashtags.map(h => `#${h}`).join(" "), "Hashtags")}
+                              className="p-1 rounded hover:bg-muted transition-colors"
+                            >
+                              {copiedField === "Hashtags" ? <Check className="w-4 h-4 text-success" /> : <Copy className="w-4 h-4 text-muted-foreground" />}
+                            </button>
+                          </div>
+                          <div className="flex flex-wrap gap-2">
+                            {generatedContent.hashtags.map((tag, i) => (
+                              <span key={i} className="px-2 py-1 bg-primary/10 text-primary text-xs rounded-full font-medium">
+                                #{tag}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    </motion.div>
+                  ) : (
+                    <motion.div
+                      key="empty"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      className="bg-muted/30 rounded-xl p-6 border border-dashed border-border flex items-center justify-center min-h-[400px]"
+                    >
+                      <div className="text-center">
+                        <Lightbulb className="w-12 h-12 text-muted-foreground/50 mx-auto mb-4" />
+                        <p className="text-muted-foreground">Selecione as opções e clique em gerar</p>
+                        <p className="text-sm text-muted-foreground mt-1">O conteúdo aparecerá aqui</p>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
             </div>
           )}
