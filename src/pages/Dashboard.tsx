@@ -42,17 +42,14 @@ const Dashboard = () => {
     legenda: string;
     cta: string;
     hashtags: string[];
+    date: string;
   }) => {
-    const today = new Date();
-    const nextWeek = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
-    const dateStr = nextWeek.toISOString().split("T")[0];
-
     await addContent({
       title: content.title,
       type: content.type,
       status: "ideia",
       objective: content.objective,
-      date: dateStr,
+      date: content.date,
       eventType: content.eventType,
       roteiro: content.roteiro,
       legenda: content.legenda,
@@ -120,7 +117,10 @@ const Dashboard = () => {
         </nav>
 
         <div className="p-3 border-t border-sidebar-border space-y-1">
-          <button className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sidebar-foreground hover:bg-sidebar-accent/50 transition-all">
+          <button 
+            onClick={() => navigate("/settings")}
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sidebar-foreground hover:bg-sidebar-accent/50 transition-all"
+          >
             <Settings className="w-5 h-5 shrink-0" />
             {sidebarOpen && <span className="text-sm">Configurações</span>}
           </button>
@@ -187,7 +187,13 @@ const Dashboard = () => {
           {activeView === "gerador" && (
             <GeneratorView onSaveContent={handleSaveContent} />
           )}
-          {activeView === "biblioteca" && <LibraryView />}
+          {activeView === "biblioteca" && (
+            <LibraryView 
+              contents={contents} 
+              onSelectContent={setSelectedContent}
+              onDeleteContent={deleteContent}
+            />
+          )}
         </main>
       </div>
 
