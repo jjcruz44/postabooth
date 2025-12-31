@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { Video, Image, MessageSquare, Target, MoreHorizontal, Trash2, Edit, ArrowRight } from "lucide-react";
-import { ContentItem, ContentStatus, ContentType } from "@/hooks/useContents";
+import { ContentItem, ContentStatus, ContentType } from "@/hooks/useContentsDB";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -99,11 +99,15 @@ export function ContentCard({ content, onUpdateStatus, onDelete, onClick }: Cont
               {statusLabels[content.status]}
             </span>
             <span className="text-muted-foreground capitalize">{content.type}</span>
-            <span className="text-muted-foreground flex items-center gap-1">
-              <Target className="w-3 h-3" />
-              {content.objective}
-            </span>
-            <span className="text-muted-foreground">{content.eventType}</span>
+            {content.objective && (
+              <span className="text-muted-foreground flex items-center gap-1">
+                <Target className="w-3 h-3" />
+                {content.objective}
+              </span>
+            )}
+            {content.eventType && (
+              <span className="text-muted-foreground">{content.eventType}</span>
+            )}
           </div>
         </div>
       </div>
