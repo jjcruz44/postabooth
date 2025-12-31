@@ -8,13 +8,60 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { ContentType } from "@/hooks/useContents";
 
+interface StorySlide {
+  conteudo: string;
+  elemento_interativo_sugerido?: string;
+}
+
+interface CarouselSlide {
+  numero?: number;
+  titulo?: string;
+  conteudo?: string;
+  sugestao_visual?: string;
+}
+
+type RoteiroType = string | StorySlide[] | CarouselSlide[];
+
 interface GeneratedContent {
   titulo: string;
   ideia: string;
-  roteiro: string;
+  roteiro: RoteiroType;
   legenda: string;
   cta: string;
   hashtags: string[];
+}
+
+function formatRoteiro(roteiro: RoteiroType): string {
+  if (typeof roteiro === "string") {
+    return roteiro;
+  }
+  
+  if (Array.isArray(roteiro)) {
+    return roteiro
+      .map((item, index) => {
+        if ("conteudo" in item) {
+          // Stories format
+          const storyItem = item as StorySlide;
+          let text = `Story ${index + 1}: ${storyItem.conteudo}`;
+          if (storyItem.elemento_interativo_sugerido) {
+            text += `\n  → Interativo: ${storyItem.elemento_interativo_sugerido}`;
+          }
+          return text;
+        } else if ("titulo" in item || "numero" in item) {
+          // Carousel format
+          const carouselItem = item as CarouselSlide;
+          let text = `Slide ${carouselItem.numero || index + 1}`;
+          if (carouselItem.titulo) text += `: ${carouselItem.titulo}`;
+          if (carouselItem.conteudo) text += `\n  ${carouselItem.conteudo}`;
+          if (carouselItem.sugestao_visual) text += `\n  → Visual: ${carouselItem.sugestao_visual}`;
+          return text;
+        }
+        return JSON.stringify(item);
+      })
+      .join("\n\n");
+  }
+  
+  return String(roteiro);
 }
 
 const contentTypes = [
@@ -100,7 +147,7 @@ export function GeneratorView({ onSaveContent }: GeneratorViewProps) {
       type: selectedContentType,
       objective: selectedObjective,
       eventType: selectedEventType,
-      roteiro: generatedContent.roteiro,
+      roteiro: formatRoteiro(generatedContent.roteiro),
       legenda: generatedContent.legenda,
       cta: generatedContent.cta,
       hashtags: generatedContent.hashtags,
@@ -294,8 +341,8 @@ export function GeneratorView({ onSaveContent }: GeneratorViewProps) {
                 {/* Script */}
                 <ContentSection
                   label="Roteiro"
-                  content={generatedContent.roteiro}
-                  onCopy={() => copyToClipboard(generatedContent.roteiro, "Roteiro")}
+                  content={formatRoteiro(generatedContent.roteiro)}
+                  onCopy={() => copyToClipboard(formatRoteiro(generatedContent.roteiro), "Roteiro")}
                   copied={copiedField === "Roteiro"}
                   block
                 />
