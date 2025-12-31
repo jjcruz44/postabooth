@@ -4,4 +4,4 @@ project_id = "oyctjfhgnlhxpfjcvquz"
 verify_jwt = true
 
 [functions.suggest-content]
-verify_jwt = true
+verify_jwt = false
