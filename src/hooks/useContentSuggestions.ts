@@ -22,24 +22,40 @@ export function useContentSuggestions() {
     setError(null);
 
     try {
+      console.log("Fetching AI suggestions...");
+      
       const { data, error: fnError } = await supabase.functions.invoke("suggest-content");
 
       if (fnError) {
-        console.error("Function error:", fnError);
-        throw new Error(fnError.message || "Erro ao carregar sugestões");
+        console.error("Function invoke error:", fnError);
+        throw new Error(fnError.message || "Erro ao chamar função");
       }
 
+      // Handle error response from the function (always returns 200 with error field)
       if (data?.error) {
-        throw new Error(data.error);
+        console.warn("Function returned error:", data.error);
+        setError(data.error);
+        setSuggestions(data.suggestions || []);
+        toast({
+          title: "Aviso",
+          description: data.error,
+          variant: "destructive",
+        });
+        return;
       }
 
-      if (data?.suggestions) {
+      if (data?.suggestions && Array.isArray(data.suggestions)) {
+        console.log("Suggestions received:", data.suggestions.length);
         setSuggestions(data.suggestions);
+      } else {
+        console.warn("No suggestions in response:", data);
+        setSuggestions([]);
       }
     } catch (err) {
       console.error("Error fetching suggestions:", err);
       const errorMessage = err instanceof Error ? err.message : "Erro ao carregar sugestões";
       setError(errorMessage);
+      setSuggestions([]);
       toast({
         title: "Erro",
         description: errorMessage,
