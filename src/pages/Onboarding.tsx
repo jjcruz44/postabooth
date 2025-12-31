@@ -1,8 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Camera, Sparkles, ArrowRight, ArrowLeft, Check, Heart, Building2, Crown, PartyPopper, GraduationCap } from "lucide-react";
+import { Camera, Sparkles, ArrowRight, ArrowLeft, Check, Heart, Building2, Crown, PartyPopper, GraduationCap, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
+import { useProfile } from "@/hooks/useProfile";
+import { useToast } from "@/hooks/use-toast";
 
 type ServiceType = "cabine" | "espelho" | "totem" | "foto-lembranca";
 type EventType = "casamento" | "corporativo" | "15anos" | "infantil" | "formatura";
@@ -47,7 +50,12 @@ const frequencies = [
 
 const Onboarding = () => {
   const navigate = useNavigate();
+  const { user, loading: authLoading } = useAuth();
+  const { updateProfile } = useProfile();
+  const { toast } = useToast();
+  
   const [step, setStep] = useState(1);
+  const [saving, setSaving] = useState(false);
   const [data, setData] = useState<OnboardingData>({
     services: [],
     events: [],
@@ -57,6 +65,13 @@ const Onboarding = () => {
   });
 
   const totalSteps = 5;
+
+  // Redirect if not logged in
+  useEffect(() => {
+    if (!authLoading && !user) {
+      navigate("/login");
+    }
+  }, [user, authLoading, navigate]);
 
   const toggleService = (serviceId: ServiceType) => {
     setData((prev) => ({
@@ -93,11 +108,42 @@ const Onboarding = () => {
     }
   };
 
-  const handleComplete = () => {
-    // Store onboarding data and navigate to dashboard
-    localStorage.setItem("postabooth_onboarding", JSON.stringify(data));
-    navigate("/dashboard");
+  const handleComplete = async () => {
+    setSaving(true);
+    try {
+      await updateProfile({
+        services: data.services,
+        events: data.events,
+        city: data.city,
+        brandStyle: data.brandStyle || undefined,
+        postFrequency: data.frequency || undefined,
+      });
+
+      toast({
+        title: "Perfil configurado!",
+        description: "Agora você está pronto para usar o PostaBooth.",
+      });
+
+      navigate("/dashboard");
+    } catch (error) {
+      console.error("Error saving onboarding data:", error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível salvar suas preferências. Tente novamente.",
+        variant: "destructive",
+      });
+    } finally {
+      setSaving(false);
+    }
   };
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="w-8 h-8 text-primary animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -345,6 +391,7 @@ const Onboarding = () => {
               variant="ghost"
               onClick={() => setStep((s) => s - 1)}
               className="gap-2"
+              disabled={saving}
             >
               <ArrowLeft className="w-4 h-4" />
               Voltar
@@ -366,11 +413,20 @@ const Onboarding = () => {
             <Button
               variant="hero"
               onClick={handleComplete}
-              disabled={!canProceed()}
+              disabled={!canProceed() || saving}
               className="gap-2"
             >
-              Começar a usar
-              <Sparkles className="w-4 h-4" />
+              {saving ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Salvando...
+                </>
+              ) : (
+                <>
+                  Começar a usar
+                  <Sparkles className="w-4 h-4" />
+                </>
+              )}
             </Button>
           )}
         </div>

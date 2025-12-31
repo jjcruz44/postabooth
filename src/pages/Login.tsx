@@ -1,20 +1,139 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Camera, Mail, Lock, ArrowRight, Eye, EyeOff } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { Camera, Mail, Lock, ArrowRight, Eye, EyeOff, Loader2, User } from "lucide-react";
+import { Link, useNavigate, useLocation } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
+import { z } from "zod";
+
+const loginSchema = z.object({
+  email: z.string().email("Email inválido"),
+  password: z.string().min(6, "A senha deve ter pelo menos 6 caracteres"),
+});
+
+const signupSchema = z.object({
+  fullName: z.string().min(2, "Nome deve ter pelo menos 2 caracteres"),
+  email: z.string().email("Email inválido"),
+  password: z.string().min(6, "A senha deve ter pelo menos 6 caracteres"),
+  confirmPassword: z.string(),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "As senhas não coincidem",
+  path: ["confirmPassword"],
+});
 
 const Login = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { user, signIn, signUp, loading: authLoading } = useAuth();
+  const { toast } = useToast();
+
+  const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [fullName, setFullName] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    // For demo purposes, just navigate to dashboard
-    navigate("/dashboard");
+  // Redirect if already logged in
+  useEffect(() => {
+    if (user && !authLoading) {
+      const from = (location.state as { from?: { pathname: string } })?.from?.pathname || "/dashboard";
+      navigate(from, { replace: true });
+    }
+  }, [user, authLoading, navigate, location]);
+
+  const validateForm = () => {
+    try {
+      if (isSignUp) {
+        signupSchema.parse({ fullName, email, password, confirmPassword });
+      } else {
+        loginSchema.parse({ email, password });
+      }
+      setErrors({});
+      return true;
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        const newErrors: Record<string, string> = {};
+        error.errors.forEach((err) => {
+          if (err.path[0]) {
+            newErrors[err.path[0] as string] = err.message;
+          }
+        });
+        setErrors(newErrors);
+      }
+      return false;
+    }
   };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!validateForm()) return;
+
+    setLoading(true);
+
+    try {
+      if (isSignUp) {
+        const { error } = await signUp(email, password, fullName);
+        if (error) {
+          if (error.message.includes("already registered")) {
+            toast({
+              title: "Email já cadastrado",
+              description: "Este email já está em uso. Tente fazer login.",
+              variant: "destructive",
+            });
+          } else {
+            toast({
+              title: "Erro no cadastro",
+              description: error.message,
+              variant: "destructive",
+            });
+          }
+          return;
+        }
+        toast({
+          title: "Conta criada!",
+          description: "Bem-vindo ao PostaBooth!",
+        });
+        navigate("/onboarding");
+      } else {
+        const { error } = await signIn(email, password);
+        if (error) {
+          if (error.message.includes("Invalid login")) {
+            toast({
+              title: "Credenciais inválidas",
+              description: "Email ou senha incorretos.",
+              variant: "destructive",
+            });
+          } else {
+            toast({
+              title: "Erro no login",
+              description: error.message,
+              variant: "destructive",
+            });
+          }
+          return;
+        }
+        toast({
+          title: "Bem-vindo de volta!",
+          description: "Login realizado com sucesso.",
+        });
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="w-8 h-8 text-primary animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background flex">
@@ -36,15 +155,40 @@ const Login = () => {
           {/* Header */}
           <div className="mb-8">
             <h1 className="text-2xl font-bold text-foreground mb-2">
-              Bem-vindo de volta!
+              {isSignUp ? "Crie sua conta" : "Bem-vindo de volta!"}
             </h1>
             <p className="text-muted-foreground">
-              Entre na sua conta para acessar seu calendário
+              {isSignUp
+                ? "Comece a criar conteúdo incrível para seu negócio"
+                : "Entre na sua conta para acessar seu calendário"}
             </p>
           </div>
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-5">
+            {isSignUp && (
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-2">
+                  Nome completo
+                </label>
+                <div className="relative">
+                  <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                  <input
+                    type="text"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    placeholder="Seu nome"
+                    className={`w-full pl-12 pr-4 py-3 rounded-xl border ${
+                      errors.fullName ? "border-destructive" : "border-border"
+                    } bg-background text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all`}
+                  />
+                </div>
+                {errors.fullName && (
+                  <p className="text-sm text-destructive mt-1">{errors.fullName}</p>
+                )}
+              </div>
+            )}
+
             <div>
               <label className="block text-sm font-medium text-foreground mb-2">
                 E-mail
@@ -56,9 +200,14 @@ const Login = () => {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="seu@email.com"
-                  className="w-full pl-12 pr-4 py-3 rounded-xl border border-border bg-background text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+                  className={`w-full pl-12 pr-4 py-3 rounded-xl border ${
+                    errors.email ? "border-destructive" : "border-border"
+                  } bg-background text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all`}
                 />
               </div>
+              {errors.email && (
+                <p className="text-sm text-destructive mt-1">{errors.email}</p>
+              )}
             </div>
 
             <div>
@@ -72,7 +221,9 @@ const Login = () => {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full pl-12 pr-12 py-3 rounded-xl border border-border bg-background text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+                  className={`w-full pl-12 pr-12 py-3 rounded-xl border ${
+                    errors.password ? "border-destructive" : "border-border"
+                  } bg-background text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all`}
                 />
                 <button
                   type="button"
@@ -82,29 +233,73 @@ const Login = () => {
                   {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
               </div>
+              {errors.password && (
+                <p className="text-sm text-destructive mt-1">{errors.password}</p>
+              )}
             </div>
 
-            <div className="flex items-center justify-between">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input type="checkbox" className="rounded border-border text-primary focus:ring-primary" />
-                <span className="text-sm text-muted-foreground">Lembrar de mim</span>
-              </label>
-              <a href="#" className="text-sm text-primary hover:underline">
-                Esqueceu a senha?
-              </a>
-            </div>
+            {isSignUp && (
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-2">
+                  Confirmar senha
+                </label>
+                <div className="relative">
+                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="••••••••"
+                    className={`w-full pl-12 pr-4 py-3 rounded-xl border ${
+                      errors.confirmPassword ? "border-destructive" : "border-border"
+                    } bg-background text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all`}
+                  />
+                </div>
+                {errors.confirmPassword && (
+                  <p className="text-sm text-destructive mt-1">{errors.confirmPassword}</p>
+                )}
+              </div>
+            )}
 
-            <Button type="submit" variant="hero" className="w-full gap-2">
-              Entrar
-              <ArrowRight className="w-4 h-4" />
+            {!isSignUp && (
+              <div className="flex items-center justify-between">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" className="rounded border-border text-primary focus:ring-primary" />
+                  <span className="text-sm text-muted-foreground">Lembrar de mim</span>
+                </label>
+                <button type="button" className="text-sm text-primary hover:underline">
+                  Esqueceu a senha?
+                </button>
+              </div>
+            )}
+
+            <Button type="submit" variant="hero" className="w-full gap-2" disabled={loading}>
+              {loading ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  {isSignUp ? "Criando conta..." : "Entrando..."}
+                </>
+              ) : (
+                <>
+                  {isSignUp ? "Criar conta" : "Entrar"}
+                  <ArrowRight className="w-4 h-4" />
+                </>
+              )}
             </Button>
           </form>
 
           <p className="mt-6 text-center text-sm text-muted-foreground">
-            Ainda não tem conta?{" "}
-            <Link to="/onboarding" className="text-primary font-medium hover:underline">
-              Criar conta grátis
-            </Link>
+            {isSignUp ? "Já tem uma conta?" : "Ainda não tem conta?"}{" "}
+            <button
+              type="button"
+              onClick={() => {
+                setIsSignUp(!isSignUp);
+                setErrors({});
+              }}
+              className="text-primary font-medium hover:underline"
+            >
+              {isSignUp ? "Fazer login" : "Criar conta grátis"}
+            </button>
           </p>
         </motion.div>
       </div>

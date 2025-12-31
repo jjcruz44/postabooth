@@ -14,7 +14,143 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      contents: {
+        Row: {
+          created_at: string
+          cta: string | null
+          event_type: string | null
+          hashtags: string[] | null
+          id: string
+          legenda: string | null
+          objective: string | null
+          roteiro: string | null
+          scheduled_date: string | null
+          status: string
+          title: string
+          type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          cta?: string | null
+          event_type?: string | null
+          hashtags?: string[] | null
+          id?: string
+          legenda?: string | null
+          objective?: string | null
+          roteiro?: string | null
+          scheduled_date?: string | null
+          status?: string
+          title: string
+          type: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          cta?: string | null
+          event_type?: string | null
+          hashtags?: string[] | null
+          id?: string
+          legenda?: string | null
+          objective?: string | null
+          roteiro?: string | null
+          scheduled_date?: string | null
+          status?: string
+          title?: string
+          type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          brand_style: string | null
+          city: string | null
+          created_at: string
+          events: string[] | null
+          full_name: string | null
+          id: string
+          post_frequency: string | null
+          services: string[] | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          brand_style?: string | null
+          city?: string | null
+          created_at?: string
+          events?: string[] | null
+          full_name?: string | null
+          id?: string
+          post_frequency?: string | null
+          services?: string[] | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          brand_style?: string | null
+          city?: string | null
+          created_at?: string
+          events?: string[] | null
+          full_name?: string | null
+          id?: string
+          post_frequency?: string | null
+          services?: string[] | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      schedules: {
+        Row: {
+          content_id: string | null
+          created_at: string
+          description: string | null
+          id: string
+          scheduled_date: string
+          scheduled_time: string | null
+          status: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          content_id?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          scheduled_date: string
+          scheduled_time?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          content_id?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          scheduled_date?: string
+          scheduled_time?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "schedules_content_id_fkey"
+            columns: ["content_id"]
+            isOneToOne: false
+            referencedRelation: "contents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never

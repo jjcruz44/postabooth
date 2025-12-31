@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ContentCard } from "./ContentCard";
-import { ContentItem, ContentStatus, ContentType } from "@/hooks/useContents";
+import { ContentItem, ContentStatus, ContentType } from "@/hooks/useContentsDB";
 
 interface ContentsViewProps {
   contents: ContentItem[];
