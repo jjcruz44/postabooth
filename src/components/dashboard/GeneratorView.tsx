@@ -126,6 +126,21 @@ export function GeneratorView({ onSaveContent, initialSuggestion, onSuggestionUs
     setGeneratedContent(null);
 
     try {
+      // Get the current session and verify authentication
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError || !sessionData.session) {
+        toast({
+          title: "Sessão expirada",
+          description: "Por favor, faça login novamente para continuar.",
+          variant: "destructive",
+        });
+        setIsGenerating(false);
+        return;
+      }
+
+      const accessToken = sessionData.session.access_token;
+
       const { data, error } = await supabase.functions.invoke("generate-content", {
         body: {
           contentType: selectedContentType,
@@ -133,9 +148,49 @@ export function GeneratorView({ onSaveContent, initialSuggestion, onSuggestionUs
           objective: selectedObjective,
           mainIdea: mainIdea.trim() || undefined,
         },
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
       });
 
-      if (error) throw error;
+      if (error) {
+        // Handle specific auth errors
+        if (error.message?.includes("401") || error.message?.includes("JWT") || error.message?.includes("Unauthorized")) {
+          // Try to refresh the session
+          const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
+          
+          if (refreshError || !refreshData.session) {
+            toast({
+              title: "Sessão expirada",
+              description: "Por favor, faça login novamente.",
+              variant: "destructive",
+            });
+            return;
+          }
+          
+          // Retry with new token
+          const { data: retryData, error: retryError } = await supabase.functions.invoke("generate-content", {
+            body: {
+              contentType: selectedContentType,
+              eventType: selectedEventType,
+              objective: selectedObjective,
+              mainIdea: mainIdea.trim() || undefined,
+            },
+            headers: {
+              Authorization: `Bearer ${refreshData.session.access_token}`,
+            },
+          });
+          
+          if (retryError) throw retryError;
+          setGeneratedContent(retryData);
+          toast({
+            title: "Conteúdo gerado!",
+            description: "Seu conteúdo foi criado com sucesso.",
+          });
+          return;
+        }
+        throw error;
+      }
 
       setGeneratedContent(data);
       toast({
