@@ -22,9 +22,26 @@ export function useContentSuggestions() {
     setError(null);
 
     try {
-      const { data, error: fnError } = await supabase.functions.invoke("suggest-content");
+      // Ensure we have a valid session before calling
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError || !session) {
+        throw new Error("Sessão não encontrada. Por favor, faça login novamente.");
+      }
 
-      if (fnError) throw fnError;
+      const { data, error: fnError } = await supabase.functions.invoke("suggest-content", {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
+
+      if (fnError) {
+        // Check for specific error types
+        if (fnError.message?.includes("401") || fnError.message?.includes("JWT")) {
+          throw new Error("Sessão expirada. Por favor, faça login novamente.");
+        }
+        throw fnError;
+      }
 
       if (data?.suggestions) {
         setSuggestions(data.suggestions);
