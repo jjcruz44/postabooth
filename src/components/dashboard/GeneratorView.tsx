@@ -89,17 +89,31 @@ interface GeneratorViewProps {
     hashtags: string[];
     date: string;
   }) => void;
+  initialSuggestion?: {
+    title: string;
+    description: string;
+    type: ContentType;
+    eventType: string;
+    objective: string;
+  } | null;
+  onSuggestionUsed?: () => void;
 }
 
-export function GeneratorView({ onSaveContent }: GeneratorViewProps) {
+export function GeneratorView({ onSaveContent, initialSuggestion, onSuggestionUsed }: GeneratorViewProps) {
   const { toast } = useToast();
-  const [selectedContentType, setSelectedContentType] = useState<ContentType>("reels");
-  const [selectedEventType, setSelectedEventType] = useState("Casamento");
-  const [selectedObjective, setSelectedObjective] = useState("Autoridade");
+  const [selectedContentType, setSelectedContentType] = useState<ContentType>(initialSuggestion?.type || "reels");
+  const [selectedEventType, setSelectedEventType] = useState(initialSuggestion?.eventType || "Casamento");
+  const [selectedObjective, setSelectedObjective] = useState(initialSuggestion?.objective || "Autoridade");
+  const [mainIdea, setMainIdea] = useState(initialSuggestion?.description || "");
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedContent, setGeneratedContent] = useState<GeneratedContent | null>(null);
   const [copiedField, setCopiedField] = useState<string | null>(null);
+
+  // Apply suggestion when it changes
+  if (initialSuggestion && onSuggestionUsed) {
+    onSuggestionUsed();
+  }
 
   const handleGenerate = async () => {
     setIsGenerating(true);
@@ -111,6 +125,7 @@ export function GeneratorView({ onSaveContent }: GeneratorViewProps) {
           contentType: selectedContentType,
           eventType: selectedEventType,
           objective: selectedObjective,
+          mainIdea: mainIdea.trim() || undefined,
         },
       });
 
@@ -257,6 +272,23 @@ export function GeneratorView({ onSaveContent }: GeneratorViewProps) {
                 </button>
               ))}
             </div>
+          </div>
+
+          {/* Main Idea */}
+          <div>
+            <label className="block text-sm font-medium text-foreground mb-2">
+              Ideia Principal
+            </label>
+            <textarea
+              value={mainIdea}
+              onChange={(e) => setMainIdea(e.target.value)}
+              placeholder="Descreva a ideia central ou mensagem que você quer comunicar nesse post..."
+              className="w-full px-4 py-3 rounded-xl border border-border bg-background text-foreground focus:outline-none focus:border-primary resize-none min-h-[100px]"
+              rows={3}
+            />
+            <p className="text-xs text-muted-foreground mt-1">
+              Opcional: a IA usará essa ideia como base principal para gerar o conteúdo
+            </p>
           </div>
 
           {/* Date Picker */}

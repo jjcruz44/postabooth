@@ -10,7 +10,31 @@ interface ContentRequest {
   contentType: 'reels' | 'carrossel' | 'stories';
   eventType: string;
   objective: string;
+  mainIdea?: string;
   brandStyle?: string;
+}
+
+interface UserProfile {
+  brand_style: string | null;
+  services: string[] | null;
+  events: string[] | null;
+  city: string | null;
+}
+
+async function getUserProfile(supabaseUrl: string, supabaseServiceKey: string, userId: string): Promise<UserProfile | null> {
+  const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
+  
+  const { data, error } = await supabaseAdmin
+    .from('profiles')
+    .select('brand_style, services, events, city')
+    .eq('user_id', userId)
+    .maybeSingle();
+  
+  if (error) {
+    console.error('Error fetching profile:', error);
+    return null;
+  }
+  return data as UserProfile | null;
 }
 
 serve(async (req) => {
@@ -44,33 +68,60 @@ serve(async (req) => {
       });
     }
 
-    const { contentType, eventType, objective, brandStyle } = await req.json() as ContentRequest;
+    const { contentType, eventType, objective, mainIdea } = await req.json() as ContentRequest;
     
-    console.log('Generating content for user:', user.id, { contentType, eventType, objective, brandStyle });
+    // Fetch user's brand style and profile data using service role key
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const userProfile = await getUserProfile(supabaseUrl, supabaseServiceKey, user.id);
+    const brandStyle = userProfile?.brand_style || '';
+    const userServices = userProfile?.services?.join(', ') || 'cabines fotográficas';
+    const userEvents = userProfile?.events?.join(', ') || eventType;
+    const userCity = userProfile?.city || '';
+    
+    console.log('Generating content for user:', user.id, { contentType, eventType, objective, mainIdea, brandStyle });
 
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
     if (!LOVABLE_API_KEY) {
       throw new Error('LOVABLE_API_KEY is not configured');
     }
 
+    // Enhanced system prompt with brand personality
     const systemPrompt = `Você é um especialista em marketing digital para profissionais de cabines fotográficas, espelho mágico e totens para eventos. Seu trabalho é criar conteúdo estratégico para redes sociais que gere engajamento e conversões.
 
-Você deve criar conteúdo em português brasileiro, com linguagem profissional mas acessível, sem jargões técnicos de marketing.
+IDENTIDADE DA MARCA DO USUÁRIO:
+${brandStyle ? `Estilo/Personalidade da Marca: ${brandStyle}` : 'Estilo profissional e acessível'}
+Serviços oferecidos: ${userServices}
+Tipos de eventos que atende: ${userEvents}
+${userCity ? `Localização: ${userCity}` : ''}
 
-Regras importantes:
-- Seja específico para o nicho de cabines/totens fotográficos
-- Adapte o tom de acordo com o tipo de evento
-- Foque em conversão, não apenas engajamento
-- Use linguagem emocional quando apropriado
-- Inclua CTAs claros e diretos`;
+REGRAS DE CRIAÇÃO:
+1. TODO conteúdo deve refletir a personalidade e tom de voz da marca definidos acima
+2. Seja específico para o nicho de cabines/totens fotográficos
+3. Adapte o tom de acordo com o tipo de evento e estilo da marca
+4. Foque em conversão, não apenas engajamento
+5. Use linguagem emocional quando apropriado, mas sempre alinhada à marca
+6. Inclua CTAs claros e diretos
+7. Escreva sempre em português brasileiro`;
 
-    const userPrompt = `Crie um conteúdo completo para ${contentType.toUpperCase()} sobre cabines fotográficas/espelho mágico/totens.
+    // Build user prompt with main idea as priority
+    let userPrompt = `Crie um conteúdo completo para ${contentType.toUpperCase()} sobre serviços de cabines fotográficas/espelho mágico/totens.
 
-ESPECIFICAÇÕES:
+`;
+
+    // Main idea as primary reference if provided
+    if (mainIdea && mainIdea.trim()) {
+      userPrompt += `🎯 IDEIA PRINCIPAL (USE COMO BASE CENTRAL DO CONTEÚDO):
+"${mainIdea}"
+
+O conteúdo DEVE ser construído em torno dessa ideia principal. Ela é o ponto de partida e referência mais importante.
+
+`;
+    }
+
+    userPrompt += `ESPECIFICAÇÕES ADICIONAIS:
 - Tipo de conteúdo: ${contentType}
 - Tipo de evento alvo: ${eventType}
 - Objetivo do post: ${objective}
-${brandStyle ? `- Estilo da marca: ${brandStyle}` : ''}
 
 VOCÊ DEVE RETORNAR UM JSON COM EXATAMENTE ESTA ESTRUTURA:
 

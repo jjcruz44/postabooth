@@ -4,8 +4,8 @@ import {
   Camera, Calendar, FolderOpen, LayoutGrid, Settings, LogOut,
   ChevronLeft, ChevronRight, Search, Bell, Sparkles, Loader2
 } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
-import { useContentsDB, ContentItem, ContentStatus } from "@/hooks/useContentsDB";
+import { useNavigate } from "react-router-dom";
+import { useContentsDB, ContentItem } from "@/hooks/useContentsDB";
 import { useAuth } from "@/contexts/AuthContext";
 import { CalendarView } from "@/components/dashboard/CalendarView";
 import { ContentsView } from "@/components/dashboard/ContentsView";
@@ -13,6 +13,7 @@ import { GeneratorView } from "@/components/dashboard/GeneratorView";
 import { LibraryView } from "@/components/dashboard/LibraryView";
 import { ContentDetailModal } from "@/components/dashboard/ContentDetailModal";
 import { useToast } from "@/hooks/use-toast";
+import { ContentSuggestion } from "@/hooks/useContentSuggestions";
 
 type ViewType = "calendario" | "conteudos" | "biblioteca" | "gerador";
 
@@ -23,6 +24,7 @@ const Dashboard = () => {
   const [activeView, setActiveView] = useState<ViewType>("calendario");
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [selectedContent, setSelectedContent] = useState<ContentItem | null>(null);
+  const [selectedSuggestion, setSelectedSuggestion] = useState<ContentSuggestion | null>(null);
   
   const { contents, loading, addContent, updateStatus, deleteContent, stats } = useContentsDB();
 
@@ -185,13 +187,21 @@ const Dashboard = () => {
             />
           )}
           {activeView === "gerador" && (
-            <GeneratorView onSaveContent={handleSaveContent} />
+            <GeneratorView 
+              onSaveContent={handleSaveContent} 
+              initialSuggestion={selectedSuggestion}
+              onSuggestionUsed={() => setSelectedSuggestion(null)}
+            />
           )}
           {activeView === "biblioteca" && (
             <LibraryView 
               contents={contents} 
               onSelectContent={setSelectedContent}
               onDeleteContent={deleteContent}
+              onUseSuggestion={(suggestion) => {
+                setSelectedSuggestion(suggestion);
+                setActiveView("gerador");
+              }}
             />
           )}
         </main>
