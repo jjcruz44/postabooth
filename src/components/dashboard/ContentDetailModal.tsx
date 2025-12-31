@@ -1,7 +1,7 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Video, Image, MessageSquare, Target, Calendar, Copy, Check, Hash } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { ContentItem, ContentStatus, ContentType } from "@/hooks/useContents";
+import { ContentItem, ContentStatus, ContentType } from "@/hooks/useContentsDB";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 

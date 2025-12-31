@@ -2,24 +2,29 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { 
   Camera, Calendar, FolderOpen, LayoutGrid, Settings, LogOut,
-  ChevronLeft, ChevronRight, Search, Bell, Sparkles
+  ChevronLeft, ChevronRight, Search, Bell, Sparkles, Loader2
 } from "lucide-react";
-import { Link } from "react-router-dom";
-import { useContents, ContentItem, ContentStatus } from "@/hooks/useContents";
+import { Link, useNavigate } from "react-router-dom";
+import { useContentsDB, ContentItem, ContentStatus } from "@/hooks/useContentsDB";
+import { useAuth } from "@/contexts/AuthContext";
 import { CalendarView } from "@/components/dashboard/CalendarView";
 import { ContentsView } from "@/components/dashboard/ContentsView";
 import { GeneratorView } from "@/components/dashboard/GeneratorView";
 import { LibraryView } from "@/components/dashboard/LibraryView";
 import { ContentDetailModal } from "@/components/dashboard/ContentDetailModal";
+import { useToast } from "@/hooks/use-toast";
 
 type ViewType = "calendario" | "conteudos" | "biblioteca" | "gerador";
 
 const Dashboard = () => {
+  const navigate = useNavigate();
+  const { user, signOut } = useAuth();
+  const { toast } = useToast();
   const [activeView, setActiveView] = useState<ViewType>("calendario");
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [selectedContent, setSelectedContent] = useState<ContentItem | null>(null);
   
-  const { contents, addContent, updateStatus, deleteContent, stats } = useContents();
+  const { contents, loading, addContent, updateStatus, deleteContent, stats } = useContentsDB();
 
   const navItems = [
     { id: "calendario" as const, label: "Calendário", icon: Calendar },
@@ -28,7 +33,7 @@ const Dashboard = () => {
     { id: "biblioteca" as const, label: "Biblioteca", icon: FolderOpen },
   ];
 
-  const handleSaveContent = (content: {
+  const handleSaveContent = async (content: {
     title: string;
     type: "reels" | "carrossel" | "stories";
     objective: string;
@@ -42,7 +47,7 @@ const Dashboard = () => {
     const nextWeek = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
     const dateStr = nextWeek.toISOString().split("T")[0];
 
-    addContent({
+    await addContent({
       title: content.title,
       type: content.type,
       status: "ideia",
@@ -55,6 +60,28 @@ const Dashboard = () => {
       hashtags: content.hashtags,
     });
   };
+
+  const handleLogout = async () => {
+    await signOut();
+    toast({
+      title: "Até logo!",
+      description: "Você saiu da sua conta.",
+    });
+    navigate("/");
+  };
+
+  const userInitials = user?.email?.slice(0, 2).toUpperCase() || "U";
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center">
+          <Loader2 className="w-8 h-8 text-primary animate-spin mx-auto mb-4" />
+          <p className="text-muted-foreground">Carregando seus conteúdos...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background flex">
@@ -97,10 +124,13 @@ const Dashboard = () => {
             <Settings className="w-5 h-5 shrink-0" />
             {sidebarOpen && <span className="text-sm">Configurações</span>}
           </button>
-          <Link to="/" className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sidebar-foreground hover:bg-sidebar-accent/50 transition-all">
+          <button 
+            onClick={handleLogout}
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sidebar-foreground hover:bg-sidebar-accent/50 transition-all"
+          >
             <LogOut className="w-5 h-5 shrink-0" />
             {sidebarOpen && <span className="text-sm">Sair</span>}
-          </Link>
+          </button>
         </div>
 
         <button
@@ -131,7 +161,7 @@ const Dashboard = () => {
               <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-primary" />
             </button>
             <div className="w-9 h-9 rounded-full gradient-primary flex items-center justify-center text-primary-foreground font-bold text-sm">
-              CM
+              {userInitials}
             </div>
           </div>
         </header>
