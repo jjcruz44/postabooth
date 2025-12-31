@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
-  Sparkles, Video, Image, MessageSquare, Loader2, Copy, Check, X, Hash, Lightbulb, Save, CalendarIcon 
+  Sparkles, Video, Image, MessageSquare, Loader2, Copy, Check, X, Hash, Lightbulb, Save, CalendarIcon, AlertCircle 
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { ContentType } from "@/hooks/useContentsDB";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface StorySlide {
   conteudo: string;
@@ -101,6 +102,7 @@ interface GeneratorViewProps {
 
 export function GeneratorView({ onSaveContent, initialSuggestion, onSuggestionUsed }: GeneratorViewProps) {
   const { toast } = useToast();
+  const { session, loading: authLoading } = useAuth();
   const [selectedContentType, setSelectedContentType] = useState<ContentType>("reels");
   const [selectedEventType, setSelectedEventType] = useState("Casamento");
   const [selectedObjective, setSelectedObjective] = useState("Autoridade");
@@ -109,6 +111,9 @@ export function GeneratorView({ onSaveContent, initialSuggestion, onSuggestionUs
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedContent, setGeneratedContent] = useState<GeneratedContent | null>(null);
   const [copiedField, setCopiedField] = useState<string | null>(null);
+
+  // Check if session is ready for API calls
+  const isSessionReady = !authLoading && session !== null && !!session.access_token;
 
   // Apply suggestion when it changes
   useEffect(() => {
@@ -122,24 +127,22 @@ export function GeneratorView({ onSaveContent, initialSuggestion, onSuggestionUs
   }, [initialSuggestion, onSuggestionUsed]);
 
   const handleGenerate = async () => {
+    // Guard: Block if session is not ready
+    if (!isSessionReady || !session) {
+      toast({
+        title: "Aguarde",
+        description: "Verificando sua sessão. Tente novamente em alguns segundos.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsGenerating(true);
     setGeneratedContent(null);
 
     try {
-      // Get the current session and verify authentication
-      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-      
-      if (sessionError || !sessionData.session) {
-        toast({
-          title: "Sessão expirada",
-          description: "Por favor, faça login novamente para continuar.",
-          variant: "destructive",
-        });
-        setIsGenerating(false);
-        return;
-      }
-
-      const accessToken = sessionData.session.access_token;
+      // Use the session from AuthContext (already verified)
+      const accessToken = session.access_token;
 
       const { data, error } = await supabase.functions.invoke("generate-content", {
         body: {
@@ -383,17 +386,42 @@ export function GeneratorView({ onSaveContent, initialSuggestion, onSuggestionUs
             </Popover>
           </div>
 
+          {/* Auth status indicator */}
+          {authLoading && (
+            <div className="flex items-center gap-2 p-3 rounded-xl bg-muted/50 border border-border text-sm text-muted-foreground">
+              <Loader2 className="w-4 h-4 animate-spin" />
+              Verificando sessão...
+            </div>
+          )}
+          
+          {!authLoading && !isSessionReady && (
+            <div className="flex items-center gap-2 p-3 rounded-xl bg-destructive/10 border border-destructive/20 text-sm text-destructive">
+              <AlertCircle className="w-4 h-4" />
+              Sessão inválida. Por favor, faça login novamente.
+            </div>
+          )}
+
           <Button
             variant="hero"
             size="lg"
             className="w-full gap-2"
             onClick={handleGenerate}
-            disabled={isGenerating}
+            disabled={isGenerating || !isSessionReady}
           >
-            {isGenerating ? (
+            {authLoading ? (
+              <>
+                <Loader2 className="w-5 h-5 animate-spin" />
+                Verificando...
+              </>
+            ) : isGenerating ? (
               <>
                 <Loader2 className="w-5 h-5 animate-spin" />
                 Gerando...
+              </>
+            ) : !isSessionReady ? (
+              <>
+                <AlertCircle className="w-5 h-5" />
+                Login necessário
               </>
             ) : (
               <>
