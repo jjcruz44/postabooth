@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   Sparkles, Video, Image, MessageSquare, Loader2, Copy, Check, X, Hash, Lightbulb, Save, CalendarIcon 
@@ -101,19 +101,25 @@ interface GeneratorViewProps {
 
 export function GeneratorView({ onSaveContent, initialSuggestion, onSuggestionUsed }: GeneratorViewProps) {
   const { toast } = useToast();
-  const [selectedContentType, setSelectedContentType] = useState<ContentType>(initialSuggestion?.type || "reels");
-  const [selectedEventType, setSelectedEventType] = useState(initialSuggestion?.eventType || "Casamento");
-  const [selectedObjective, setSelectedObjective] = useState(initialSuggestion?.objective || "Autoridade");
-  const [mainIdea, setMainIdea] = useState(initialSuggestion?.description || "");
+  const [selectedContentType, setSelectedContentType] = useState<ContentType>("reels");
+  const [selectedEventType, setSelectedEventType] = useState("Casamento");
+  const [selectedObjective, setSelectedObjective] = useState("Autoridade");
+  const [mainIdea, setMainIdea] = useState("");
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedContent, setGeneratedContent] = useState<GeneratedContent | null>(null);
   const [copiedField, setCopiedField] = useState<string | null>(null);
 
   // Apply suggestion when it changes
-  if (initialSuggestion && onSuggestionUsed) {
-    onSuggestionUsed();
-  }
+  useEffect(() => {
+    if (initialSuggestion) {
+      setSelectedContentType(initialSuggestion.type || "reels");
+      setSelectedEventType(initialSuggestion.eventType || "Casamento");
+      setSelectedObjective(initialSuggestion.objective || "Autoridade");
+      setMainIdea(initialSuggestion.description || "");
+      onSuggestionUsed?.();
+    }
+  }, [initialSuggestion, onSuggestionUsed]);
 
   const handleGenerate = async () => {
     setIsGenerating(true);
