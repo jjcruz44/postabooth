@@ -7,12 +7,13 @@ const corsHeaders = {
 };
 
 interface SchedulePostRequest {
-  action: 'get-profiles' | 'schedule-post' | 'get-posts';
-  connectionId?: string;
+  action: 'schedule-post' | 'get-posts';
   postText?: string;
   scheduledFor?: string;
   hashtags?: string[];
   contentId?: string;
+  imageUrl?: string;
+  platform?: string;
 }
 
 serve(async (req) => {
@@ -47,150 +48,143 @@ serve(async (req) => {
       });
     }
 
-    const BUFFER_ACCESS_TOKEN = Deno.env.get('BUFFER_ACCESS_TOKEN');
-    if (!BUFFER_ACCESS_TOKEN) {
-      console.error('BUFFER_ACCESS_TOKEN not configured');
-      return new Response(JSON.stringify({ error: 'Buffer integration not configured' }), {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
-    const { action, connectionId, postText, scheduledFor, hashtags, contentId } = await req.json() as SchedulePostRequest;
+    const { action, postText, scheduledFor, hashtags, contentId, imageUrl, platform } = await req.json() as SchedulePostRequest;
 
     console.log('Buffer API action:', action, 'User:', user.id);
 
     switch (action) {
-      case 'get-profiles': {
-        // Get Buffer profiles (connected social accounts)
-        const response = await fetch('https://api.bufferapp.com/1/profiles.json', {
-          headers: {
-            'Authorization': `Bearer ${BUFFER_ACCESS_TOKEN}`,
-          },
-        });
-
-        if (!response.ok) {
-          const errorText = await response.text();
-          console.error('Buffer profiles error:', response.status, errorText);
-          return new Response(JSON.stringify({ error: 'Failed to fetch Buffer profiles' }), {
-            status: 500,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          });
-        }
-
-        const profiles = await response.json();
-        
-        // Return only necessary profile info (no tokens)
-        const safeProfiles = profiles.map((p: any) => ({
-          id: p.id,
-          service: p.service,
-          formatted_service: p.formatted_service,
-          avatar: p.avatar,
-          formatted_username: p.formatted_username,
-        }));
-
-        return new Response(JSON.stringify({ profiles: safeProfiles }), {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      }
-
       case 'schedule-post': {
-        if (!connectionId || !postText || !scheduledFor) {
-          return new Response(JSON.stringify({ error: 'Missing required fields' }), {
+        if (!postText || !scheduledFor) {
+          return new Response(JSON.stringify({ error: 'Missing required fields: postText and scheduledFor' }), {
             status: 400,
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           });
         }
 
-        // Get the connection to verify ownership and get Buffer profile ID
-        const { data: connection, error: connError } = await supabase
-          .from('social_connections')
-          .select('*')
-          .eq('id', connectionId)
+        // Get user's Zapier webhook URL from profile
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('zapier_webhook_url')
           .eq('user_id', user.id)
-          .single();
+          .maybeSingle();
 
-        if (connError || !connection) {
-          console.error('Connection not found:', connError);
-          return new Response(JSON.stringify({ error: 'Connection not found' }), {
-            status: 404,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          });
-        }
-
-        // Schedule post via Buffer API
-        const scheduledDate = new Date(scheduledFor);
-        const formData = new URLSearchParams();
-        formData.append('profile_ids[]', connection.profile_id!);
-        formData.append('text', hashtags?.length ? `${postText}\n\n${hashtags.join(' ')}` : postText);
-        formData.append('scheduled_at', Math.floor(scheduledDate.getTime() / 1000).toString());
-
-        const response = await fetch('https://api.bufferapp.com/1/updates/create.json', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${BUFFER_ACCESS_TOKEN}`,
-            'Content-Type': 'application/x-www-form-urlencoded',
-          },
-          body: formData.toString(),
-        });
-
-        if (!response.ok) {
-          const errorText = await response.text();
-          console.error('Buffer schedule error:', response.status, errorText);
-          
-          // Save failed post to database
-          await supabase.from('social_posts').insert({
-            user_id: user.id,
-            connection_id: connectionId,
-            content_id: contentId,
-            platform: connection.platform,
-            post_text: postText,
-            hashtags: hashtags,
-            scheduled_for: scheduledFor,
-            status: 'failed',
-            error_message: errorText,
-          });
-
-          return new Response(JSON.stringify({ error: 'Failed to schedule post' }), {
+        if (profileError) {
+          console.error('Error fetching profile:', profileError);
+          return new Response(JSON.stringify({ error: 'Failed to fetch user profile' }), {
             status: 500,
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           });
         }
 
-        const result = await response.json();
-        console.log('Buffer post created:', result);
-
-        // Save successful post to database
-        const { data: savedPost, error: saveError } = await supabase.from('social_posts').insert({
-          user_id: user.id,
-          connection_id: connectionId,
-          content_id: contentId,
-          platform: connection.platform,
-          post_text: postText,
-          hashtags: hashtags,
-          scheduled_for: scheduledFor,
-          status: 'scheduled',
-          buffer_post_id: result.updates?.[0]?.id,
-        }).select().single();
-
-        if (saveError) {
-          console.error('Error saving post:', saveError);
+        if (!profile?.zapier_webhook_url) {
+          return new Response(JSON.stringify({ error: 'Zapier webhook URL not configured. Please add it in Settings.' }), {
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
         }
 
-        return new Response(JSON.stringify({ 
-          success: true, 
-          post: savedPost,
-          bufferUpdate: result 
-        }), {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
+        // Prepare full post text with hashtags
+        const fullPostText = hashtags?.length ? `${postText}\n\n${hashtags.join(' ')}` : postText;
+
+        // Send to Zapier webhook
+        console.log('Sending to Zapier webhook:', profile.zapier_webhook_url);
+        
+        try {
+          const zapierPayload = {
+            content: fullPostText,
+            scheduled_time: scheduledFor,
+            image_url: imageUrl || null,
+            platform: platform || 'instagram',
+            user_id: user.id,
+            content_id: contentId || null,
+            triggered_at: new Date().toISOString(),
+          };
+
+          console.log('Zapier payload:', JSON.stringify(zapierPayload));
+
+          const zapierResponse = await fetch(profile.zapier_webhook_url, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(zapierPayload),
+          });
+
+          // Zapier webhooks typically return 200 on success
+          if (!zapierResponse.ok) {
+            const errorText = await zapierResponse.text();
+            console.error('Zapier webhook error:', zapierResponse.status, errorText);
+            
+            // Save failed post to database
+            await supabase.from('social_posts').insert({
+              user_id: user.id,
+              content_id: contentId,
+              platform: platform || 'instagram',
+              post_text: postText,
+              hashtags: hashtags,
+              scheduled_for: scheduledFor,
+              status: 'failed',
+              error_message: `Zapier webhook failed: ${zapierResponse.status}`,
+            });
+
+            return new Response(JSON.stringify({ error: 'Failed to send to Zapier' }), {
+              status: 500,
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            });
+          }
+
+          console.log('Zapier webhook success');
+
+          // Save successful post to database
+          const { data: savedPost, error: saveError } = await supabase.from('social_posts').insert({
+            user_id: user.id,
+            content_id: contentId,
+            platform: platform || 'instagram',
+            post_text: postText,
+            hashtags: hashtags,
+            scheduled_for: scheduledFor,
+            status: 'scheduled',
+          }).select().single();
+
+          if (saveError) {
+            console.error('Error saving post:', saveError);
+          }
+
+          return new Response(JSON.stringify({ 
+            success: true, 
+            post: savedPost,
+            message: 'Post sent to Zapier successfully' 
+          }), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+
+        } catch (zapierError) {
+          console.error('Zapier fetch error:', zapierError);
+          
+          // Save failed post to database
+          await supabase.from('social_posts').insert({
+            user_id: user.id,
+            content_id: contentId,
+            platform: platform || 'instagram',
+            post_text: postText,
+            hashtags: hashtags,
+            scheduled_for: scheduledFor,
+            status: 'failed',
+            error_message: zapierError instanceof Error ? zapierError.message : 'Unknown Zapier error',
+          });
+
+          return new Response(JSON.stringify({ error: 'Failed to connect to Zapier' }), {
+            status: 500,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
       }
 
       case 'get-posts': {
         // Get user's scheduled posts from database
         const { data: posts, error: postsError } = await supabase
           .from('social_posts')
-          .select('*, social_connections(platform, profile_name, profile_image)')
+          .select('*')
           .eq('user_id', user.id)
           .order('scheduled_for', { ascending: true });
 

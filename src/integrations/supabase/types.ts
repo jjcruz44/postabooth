@@ -77,6 +77,7 @@ export type Database = {
           services: string[] | null
           updated_at: string
           user_id: string
+          zapier_webhook_url: string | null
         }
         Insert: {
           brand_style?: string | null
@@ -89,6 +90,7 @@ export type Database = {
           services?: string[] | null
           updated_at?: string
           user_id: string
+          zapier_webhook_url?: string | null
         }
         Update: {
           brand_style?: string | null
@@ -101,6 +103,7 @@ export type Database = {
           services?: string[] | null
           updated_at?: string
           user_id?: string
+          zapier_webhook_url?: string | null
         }
         Relationships: []
       }
