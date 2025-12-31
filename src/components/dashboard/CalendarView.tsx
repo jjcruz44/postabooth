@@ -2,7 +2,7 @@ import { motion } from "framer-motion";
 import { ChevronLeft, ChevronRight, Plus, Video, Image, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCalendar } from "@/hooks/useCalendar";
-import { ContentItem, ContentType } from "@/hooks/useContents";
+import { ContentItem, ContentType } from "@/hooks/useContentsDB";
 
 const typeIcons: Record<ContentType, React.ElementType> = {
   reels: Video,
