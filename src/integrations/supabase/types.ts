@@ -77,7 +77,6 @@ export type Database = {
           services: string[] | null
           updated_at: string
           user_id: string
-          zapier_webhook_url: string | null
         }
         Insert: {
           brand_style?: string | null
@@ -90,7 +89,6 @@ export type Database = {
           services?: string[] | null
           updated_at?: string
           user_id: string
-          zapier_webhook_url?: string | null
         }
         Update: {
           brand_style?: string | null
@@ -103,7 +101,6 @@ export type Database = {
           services?: string[] | null
           updated_at?: string
           user_id?: string
-          zapier_webhook_url?: string | null
         }
         Relationships: []
       }
@@ -147,111 +144,6 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "schedules_content_id_fkey"
-            columns: ["content_id"]
-            isOneToOne: false
-            referencedRelation: "contents"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      social_connections: {
-        Row: {
-          access_token: string | null
-          connected_at: string
-          expires_at: string | null
-          id: string
-          platform: string
-          profile_id: string | null
-          profile_image: string | null
-          profile_name: string | null
-          refresh_token: string | null
-          status: string
-          user_id: string
-        }
-        Insert: {
-          access_token?: string | null
-          connected_at?: string
-          expires_at?: string | null
-          id?: string
-          platform: string
-          profile_id?: string | null
-          profile_image?: string | null
-          profile_name?: string | null
-          refresh_token?: string | null
-          status?: string
-          user_id: string
-        }
-        Update: {
-          access_token?: string | null
-          connected_at?: string
-          expires_at?: string | null
-          id?: string
-          platform?: string
-          profile_id?: string | null
-          profile_image?: string | null
-          profile_name?: string | null
-          refresh_token?: string | null
-          status?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
-      social_posts: {
-        Row: {
-          buffer_post_id: string | null
-          connection_id: string | null
-          content_id: string | null
-          created_at: string
-          error_message: string | null
-          hashtags: string[] | null
-          id: string
-          platform: string
-          post_text: string
-          published_at: string | null
-          scheduled_for: string
-          status: string
-          user_id: string
-        }
-        Insert: {
-          buffer_post_id?: string | null
-          connection_id?: string | null
-          content_id?: string | null
-          created_at?: string
-          error_message?: string | null
-          hashtags?: string[] | null
-          id?: string
-          platform: string
-          post_text: string
-          published_at?: string | null
-          scheduled_for: string
-          status?: string
-          user_id: string
-        }
-        Update: {
-          buffer_post_id?: string | null
-          connection_id?: string | null
-          content_id?: string | null
-          created_at?: string
-          error_message?: string | null
-          hashtags?: string[] | null
-          id?: string
-          platform?: string
-          post_text?: string
-          published_at?: string | null
-          scheduled_for?: string
-          status?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "social_posts_connection_id_fkey"
-            columns: ["connection_id"]
-            isOneToOne: false
-            referencedRelation: "social_connections"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "social_posts_content_id_fkey"
             columns: ["content_id"]
             isOneToOne: false
             referencedRelation: "contents"
