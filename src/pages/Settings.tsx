@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { 
-  ArrowLeft, User, Bell, Palette, Shield, CreditCard, HelpCircle, Save, Loader2 
+  ArrowLeft, User, Bell, Palette, Shield, CreditCard, HelpCircle, Save, Loader2, Link2, ExternalLink, CheckCircle, AlertCircle 
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
@@ -18,13 +18,27 @@ const Settings = () => {
   const [saving, setSaving] = useState(false);
 
   const [formData, setFormData] = useState({
-    fullName: profile?.fullName || "",
-    city: profile?.city || "",
-    brandStyle: profile?.brandStyle || "",
+    fullName: "",
+    city: "",
+    brandStyle: "",
+    zapierWebhookUrl: "",
   });
+
+  // Sync form data when profile loads
+  useEffect(() => {
+    if (profile) {
+      setFormData({
+        fullName: profile.fullName || "",
+        city: profile.city || "",
+        brandStyle: profile.brandStyle || "",
+        zapierWebhookUrl: profile.zapierWebhookUrl || "",
+      });
+    }
+  }, [profile]);
 
   const tabs = [
     { id: "perfil", label: "Perfil", icon: User },
+    { id: "integracoes", label: "Integrações", icon: Link2 },
     { id: "notificacoes", label: "Notificações", icon: Bell },
     { id: "aparencia", label: "Aparência", icon: Palette },
     { id: "privacidade", label: "Privacidade", icon: Shield },
@@ -39,6 +53,7 @@ const Settings = () => {
         fullName: formData.fullName,
         city: formData.city,
         brandStyle: formData.brandStyle,
+        zapierWebhookUrl: formData.zapierWebhookUrl,
       });
       toast({
         title: "Configurações salvas!",
@@ -176,6 +191,80 @@ const Settings = () => {
                       <Save className="w-4 h-4" />
                     )}
                     Salvar alterações
+                  </Button>
+                </div>
+              )}
+
+              {activeTab === "integracoes" && (
+                <div className="space-y-6">
+                  <div>
+                    <h2 className="text-lg font-semibold text-foreground mb-1">Integrações</h2>
+                    <p className="text-sm text-muted-foreground">
+                      Configure suas integrações para publicação automática
+                    </p>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div className="p-4 rounded-lg border border-border bg-muted/30">
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
+                          <Link2 className="w-5 h-5 text-primary" />
+                        </div>
+                        <div>
+                          <h3 className="font-medium text-foreground">Zapier + Buffer</h3>
+                          <p className="text-xs text-muted-foreground">
+                            Publique automaticamente no Instagram e Facebook
+                          </p>
+                        </div>
+                        {formData.zapierWebhookUrl ? (
+                          <CheckCircle className="w-5 h-5 text-green-500 ml-auto" />
+                        ) : (
+                          <AlertCircle className="w-5 h-5 text-amber-500 ml-auto" />
+                        )}
+                      </div>
+                      
+                      <div className="space-y-3">
+                        <div>
+                          <label className="block text-sm font-medium text-foreground mb-2">
+                            URL do Webhook Zapier
+                          </label>
+                          <input
+                            type="url"
+                            value={formData.zapierWebhookUrl}
+                            onChange={(e) => setFormData({ ...formData, zapierWebhookUrl: e.target.value })}
+                            placeholder="https://hooks.zapier.com/hooks/catch/..."
+                            className="w-full px-4 py-3 rounded-lg border border-border bg-background text-foreground focus:outline-none focus:border-primary font-mono text-sm"
+                          />
+                        </div>
+
+                        <div className="p-3 rounded-lg bg-muted/50 text-sm text-muted-foreground space-y-2">
+                          <p className="font-medium text-foreground">Como configurar:</p>
+                          <ol className="list-decimal list-inside space-y-1">
+                            <li>Crie um Zap no Zapier com trigger "Webhooks by Zapier"</li>
+                            <li>Escolha "Catch Hook" e copie a URL gerada</li>
+                            <li>Adicione ação "Buffer" para agendar posts</li>
+                            <li>Mapeie os campos: content, scheduled_time, image_url</li>
+                          </ol>
+                          <a 
+                            href="https://zapier.com/apps/buffer/integrations/webhooks" 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-primary hover:underline mt-2"
+                          >
+                            Ver tutorial no Zapier <ExternalLink className="w-3 h-3" />
+                          </a>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <Button onClick={handleSave} disabled={saving} className="gap-2">
+                    {saving ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Save className="w-4 h-4" />
+                    )}
+                    Salvar webhook
                   </Button>
                 </div>
               )}
