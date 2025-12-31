@@ -1,12 +1,16 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
-  Sparkles, Video, Image, MessageSquare, Loader2, Copy, Check, X, Hash, Lightbulb, Save 
+  Sparkles, Video, Image, MessageSquare, Loader2, Copy, Check, X, Hash, Lightbulb, Save, CalendarIcon 
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { ContentType } from "@/hooks/useContents";
+import { ContentType } from "@/hooks/useContentsDB";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 interface StorySlide {
   conteudo: string;
@@ -83,6 +87,7 @@ interface GeneratorViewProps {
     legenda: string;
     cta: string;
     hashtags: string[];
+    date: string;
   }) => void;
 }
 
@@ -91,6 +96,7 @@ export function GeneratorView({ onSaveContent }: GeneratorViewProps) {
   const [selectedContentType, setSelectedContentType] = useState<ContentType>("reels");
   const [selectedEventType, setSelectedEventType] = useState("Casamento");
   const [selectedObjective, setSelectedObjective] = useState("Autoridade");
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedContent, setGeneratedContent] = useState<GeneratedContent | null>(null);
   const [copiedField, setCopiedField] = useState<string | null>(null);
@@ -140,7 +146,7 @@ export function GeneratorView({ onSaveContent }: GeneratorViewProps) {
   };
 
   const handleSave = () => {
-    if (!generatedContent) return;
+    if (!generatedContent || !selectedDate) return;
 
     onSaveContent({
       title: generatedContent.titulo,
@@ -151,11 +157,12 @@ export function GeneratorView({ onSaveContent }: GeneratorViewProps) {
       legenda: generatedContent.legenda,
       cta: generatedContent.cta,
       hashtags: generatedContent.hashtags,
+      date: selectedDate.toISOString().split("T")[0],
     });
 
     toast({
       title: "Conteúdo salvo!",
-      description: "O conteúdo foi adicionado à sua lista.",
+      description: `Agendado para ${format(selectedDate, "dd 'de' MMMM", { locale: ptBR })}.`,
     });
 
     setGeneratedContent(null);
@@ -250,6 +257,37 @@ export function GeneratorView({ onSaveContent }: GeneratorViewProps) {
                 </button>
               ))}
             </div>
+          </div>
+
+          {/* Date Picker */}
+          <div>
+            <label className="block text-sm font-medium text-foreground mb-2">
+              Data para publicação
+            </label>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="w-full justify-start text-left font-normal"
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {selectedDate ? (
+                    format(selectedDate, "dd 'de' MMMM 'de' yyyy", { locale: ptBR })
+                  ) : (
+                    <span>Selecione uma data</span>
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={selectedDate}
+                  onSelect={setSelectedDate}
+                  disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
           </div>
 
           <Button
