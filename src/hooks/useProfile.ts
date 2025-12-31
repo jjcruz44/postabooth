@@ -12,7 +12,6 @@ export interface Profile {
   events: string[];
   brandStyle?: string;
   postFrequency?: string;
-  zapierWebhookUrl?: string;
 }
 
 export function useProfile() {
@@ -47,7 +46,6 @@ export function useProfile() {
           events: data.events || [],
           brandStyle: data.brand_style || undefined,
           postFrequency: data.post_frequency || undefined,
-          zapierWebhookUrl: data.zapier_webhook_url || undefined,
         });
       }
     } catch (error) {
@@ -72,7 +70,6 @@ export function useProfile() {
       if (updates.events !== undefined) dbUpdates.events = updates.events;
       if (updates.brandStyle !== undefined) dbUpdates.brand_style = updates.brandStyle;
       if (updates.postFrequency !== undefined) dbUpdates.post_frequency = updates.postFrequency;
-      if (updates.zapierWebhookUrl !== undefined) dbUpdates.zapier_webhook_url = updates.zapierWebhookUrl;
 
       const { error } = await supabase
         .from("profiles")

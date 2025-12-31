@@ -2,6 +2,3 @@ project_id = "oyctjfhgnlhxpfjcvquz"
 
 [functions.generate-content]
 verify_jwt = true
-
-[functions.buffer-api]
-verify_jwt = true
