@@ -7,6 +7,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import { useContentsDB, ContentItem } from "@/hooks/useContentsDB";
 import { useAuth } from "@/contexts/AuthContext";
+import { useProfile } from "@/hooks/useProfile";
 import { CalendarView } from "@/components/dashboard/CalendarView";
 import { ContentsView } from "@/components/dashboard/ContentsView";
 import { GeneratorView } from "@/components/dashboard/GeneratorView";
@@ -20,6 +21,7 @@ type ViewType = "calendario" | "conteudos" | "biblioteca" | "gerador";
 const Dashboard = () => {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
+  const { profile } = useProfile();
   const { toast } = useToast();
   const [activeView, setActiveView] = useState<ViewType>("calendario");
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -91,9 +93,17 @@ const Dashboard = () => {
         className="bg-sidebar border-r border-sidebar-border flex flex-col shrink-0 relative"
       >
         <div className="h-16 flex items-center gap-3 px-4 border-b border-sidebar-border">
-          <div className="w-9 h-9 rounded-xl gradient-primary flex items-center justify-center shrink-0">
-            <Camera className="w-5 h-5 text-primary-foreground" />
-          </div>
+          {profile?.logoUrl ? (
+            <img 
+              src={profile.logoUrl} 
+              alt="Logo da empresa" 
+              className="w-9 h-9 rounded-xl object-contain shrink-0"
+            />
+          ) : (
+            <div className="w-9 h-9 rounded-xl gradient-primary flex items-center justify-center shrink-0">
+              <Camera className="w-5 h-5 text-primary-foreground" />
+            </div>
+          )}
           {sidebarOpen && (
             <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="font-bold text-lg text-sidebar-foreground">
               PostaBooth

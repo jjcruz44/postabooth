@@ -12,6 +12,7 @@ export interface Profile {
   events: string[];
   brandStyle?: string;
   postFrequency?: string;
+  logoUrl?: string;
 }
 
 export function useProfile() {
@@ -46,6 +47,7 @@ export function useProfile() {
           events: data.events || [],
           brandStyle: data.brand_style || undefined,
           postFrequency: data.post_frequency || undefined,
+          logoUrl: data.logo_url || undefined,
         });
       }
     } catch (error) {
@@ -70,6 +72,7 @@ export function useProfile() {
       if (updates.events !== undefined) dbUpdates.events = updates.events;
       if (updates.brandStyle !== undefined) dbUpdates.brand_style = updates.brandStyle;
       if (updates.postFrequency !== undefined) dbUpdates.post_frequency = updates.postFrequency;
+      if (updates.logoUrl !== undefined) dbUpdates.logo_url = updates.logoUrl;
 
       const { error } = await supabase
         .from("profiles")
