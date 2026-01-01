@@ -73,6 +73,7 @@ export type Database = {
           events: string[] | null
           full_name: string | null
           id: string
+          logo_url: string | null
           post_frequency: string | null
           services: string[] | null
           updated_at: string
@@ -85,6 +86,7 @@ export type Database = {
           events?: string[] | null
           full_name?: string | null
           id?: string
+          logo_url?: string | null
           post_frequency?: string | null
           services?: string[] | null
           updated_at?: string
@@ -97,6 +99,7 @@ export type Database = {
           events?: string[] | null
           full_name?: string | null
           id?: string
+          logo_url?: string | null
           post_frequency?: string | null
           services?: string[] | null
           updated_at?: string

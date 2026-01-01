@@ -1,21 +1,25 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { 
-  ArrowLeft, User, Bell, Palette, Shield, CreditCard, HelpCircle, Save, Loader2
+  ArrowLeft, User, Palette, Shield, CreditCard, HelpCircle, Save, Loader2,
+  Building2, Upload, Trash2, ImageIcon
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useProfile } from "@/hooks/useProfile";
+import { useLogoUpload } from "@/hooks/useLogoUpload";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 
 const Settings = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { profile, loading, updateProfile } = useProfile();
+  const { profile, loading, updateProfile, refetch } = useProfile();
+  const { uploadLogo, removeLogo, uploading } = useLogoUpload();
   const { toast } = useToast();
-  const [activeTab, setActiveTab] = useState("perfil");
+  const [activeTab, setActiveTab] = useState("marca");
   const [saving, setSaving] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [formData, setFormData] = useState({
     fullName: "",
@@ -35,13 +39,35 @@ const Settings = () => {
   }, [profile]);
 
   const tabs = [
+    { id: "marca", label: "Marca", icon: Building2 },
     { id: "perfil", label: "Perfil", icon: User },
-    { id: "notificacoes", label: "Notificações", icon: Bell },
     { id: "aparencia", label: "Aparência", icon: Palette },
     { id: "privacidade", label: "Privacidade", icon: Shield },
     { id: "assinatura", label: "Assinatura", icon: CreditCard },
     { id: "ajuda", label: "Ajuda", icon: HelpCircle },
   ];
+
+  const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const newLogoUrl = await uploadLogo(file);
+    if (newLogoUrl) {
+      await refetch();
+    }
+    
+    // Reset input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  const handleRemoveLogo = async () => {
+    const success = await removeLogo(profile?.logoUrl);
+    if (success) {
+      await refetch();
+    }
+  };
 
   const handleSave = async () => {
     setSaving(true);
@@ -112,6 +138,106 @@ const Settings = () => {
               animate={{ opacity: 1, y: 0 }}
               className="bg-card rounded-xl p-6 border border-border"
             >
+              {activeTab === "marca" && (
+                <div className="space-y-6">
+                  <div>
+                    <h2 className="text-lg font-semibold text-foreground mb-1">Marca</h2>
+                    <p className="text-sm text-muted-foreground">
+                      Personalize a identidade visual da sua marca
+                    </p>
+                  </div>
+
+                  {/* Logo Upload Section */}
+                  <div className="space-y-4">
+                    <label className="block text-sm font-medium text-foreground">
+                      Logo da empresa
+                    </label>
+                    
+                    <div className="flex items-start gap-6">
+                      {/* Logo Preview */}
+                      <div className="w-32 h-32 rounded-xl border-2 border-dashed border-border bg-muted/50 flex items-center justify-center overflow-hidden">
+                        {profile?.logoUrl ? (
+                          <img 
+                            src={profile.logoUrl} 
+                            alt="Logo da empresa" 
+                            className="w-full h-full object-contain"
+                          />
+                        ) : (
+                          <ImageIcon className="w-10 h-10 text-muted-foreground" />
+                        )}
+                      </div>
+
+                      {/* Upload Controls */}
+                      <div className="flex-1 space-y-3">
+                        <input
+                          ref={fileInputRef}
+                          type="file"
+                          accept="image/png,image/jpeg,image/webp"
+                          onChange={handleFileSelect}
+                          className="hidden"
+                        />
+                        
+                        <Button
+                          variant="outline"
+                          onClick={() => fileInputRef.current?.click()}
+                          disabled={uploading}
+                          className="gap-2"
+                        >
+                          {uploading ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <Upload className="w-4 h-4" />
+                          )}
+                          {profile?.logoUrl ? "Alterar logo" : "Fazer upload"}
+                        </Button>
+
+                        {profile?.logoUrl && (
+                          <Button
+                            variant="ghost"
+                            onClick={handleRemoveLogo}
+                            disabled={uploading}
+                            className="gap-2 text-destructive hover:text-destructive"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                            Remover logo
+                          </Button>
+                        )}
+
+                        <p className="text-xs text-muted-foreground">
+                          PNG, JPG ou WebP. Máximo 2MB.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Brand Style */}
+                  <div>
+                    <label className="block text-sm font-medium text-foreground mb-2">
+                      Estilo da marca
+                    </label>
+                    <textarea
+                      value={formData.brandStyle}
+                      onChange={(e) => setFormData({ ...formData, brandStyle: e.target.value })}
+                      placeholder="Descreva o tom de voz e estilo da sua marca..."
+                      rows={3}
+                      className="w-full px-4 py-3 rounded-lg border border-border bg-background text-foreground focus:outline-none focus:border-primary resize-none"
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Esse estilo será usado para personalizar o conteúdo gerado pela IA
+                    </p>
+                  </div>
+
+                  <Button onClick={handleSave} disabled={saving} className="gap-2">
+                    {saving ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Save className="w-4 h-4" />
+                    )}
+                    Salvar alterações
+                  </Button>
+                </div>
+              )}
+
               {activeTab === "perfil" && (
                 <div className="space-y-6">
                   <div>
@@ -162,22 +288,6 @@ const Settings = () => {
                         className="w-full px-4 py-3 rounded-lg border border-border bg-background text-foreground focus:outline-none focus:border-primary"
                       />
                     </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-foreground mb-2">
-                        Estilo da marca
-                      </label>
-                      <textarea
-                        value={formData.brandStyle}
-                        onChange={(e) => setFormData({ ...formData, brandStyle: e.target.value })}
-                        placeholder="Descreva o tom de voz e estilo da sua marca..."
-                        rows={3}
-                        className="w-full px-4 py-3 rounded-lg border border-border bg-background text-foreground focus:outline-none focus:border-primary resize-none"
-                      />
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Esse estilo será usado para personalizar o conteúdo gerado pela IA
-                      </p>
-                    </div>
                   </div>
 
                   <Button onClick={handleSave} disabled={saving} className="gap-2">
@@ -188,20 +298,6 @@ const Settings = () => {
                     )}
                     Salvar alterações
                   </Button>
-                </div>
-              )}
-
-              {activeTab === "notificacoes" && (
-                <div className="space-y-6">
-                  <div>
-                    <h2 className="text-lg font-semibold text-foreground mb-1">Notificações</h2>
-                    <p className="text-sm text-muted-foreground">
-                      Configure como deseja receber notificações
-                    </p>
-                  </div>
-                  <p className="text-muted-foreground text-center py-8">
-                    Configurações de notificações em breve
-                  </p>
                 </div>
               )}
 
