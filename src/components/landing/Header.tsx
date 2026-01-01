@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Camera, Menu, X } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "react-router-dom";
+import postaboothLogo from "@/assets/postabooth-logo.png";
 
 export const Header = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -19,9 +20,11 @@ export const Header = () => {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2">
-            <div className="w-9 h-9 rounded-xl gradient-primary flex items-center justify-center shadow-soft">
-              <Camera className="w-5 h-5 text-primary-foreground" />
-            </div>
+            <img 
+              src={postaboothLogo} 
+              alt="PostaBooth" 
+              className="w-9 h-9 rounded-xl object-contain"
+            />
             <span className="font-bold text-xl text-foreground">PostaBooth</span>
           </Link>
 

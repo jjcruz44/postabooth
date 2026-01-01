@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { 
-  Camera, Calendar, FolderOpen, LayoutGrid, Settings, LogOut,
+  Calendar, FolderOpen, LayoutGrid, Settings, LogOut,
   ChevronLeft, ChevronRight, Search, Sparkles, Loader2
 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
+import postaboothLogo from "@/assets/postabooth-logo.png";
 import { useContentsDB, ContentItem } from "@/hooks/useContentsDB";
 import { useAuth } from "@/contexts/AuthContext";
 import { useProfile } from "@/hooks/useProfile";
@@ -92,16 +93,18 @@ const Dashboard = () => {
         animate={{ width: sidebarOpen ? 240 : 72 }}
         className="bg-sidebar border-r border-sidebar-border flex flex-col shrink-0 relative"
       >
-        <div className="h-16 flex items-center gap-3 px-4 border-b border-sidebar-border">
-          <div className="w-9 h-9 rounded-xl gradient-primary flex items-center justify-center shrink-0">
-            <Camera className="w-5 h-5 text-primary-foreground" />
-          </div>
+        <Link to="/" className="h-16 flex items-center gap-3 px-4 border-b border-sidebar-border hover:bg-sidebar-accent/30 transition-colors">
+          <img 
+            src={postaboothLogo} 
+            alt="PostaBooth" 
+            className="w-9 h-9 rounded-xl object-contain shrink-0"
+          />
           {sidebarOpen && (
             <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="font-bold text-lg text-sidebar-foreground">
               PostaBooth
             </motion.span>
           )}
-        </div>
+        </Link>
 
         <nav className="flex-1 p-3 space-y-1">
           {navItems.map((item) => (
