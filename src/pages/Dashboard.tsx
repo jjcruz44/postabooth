@@ -93,17 +93,9 @@ const Dashboard = () => {
         className="bg-sidebar border-r border-sidebar-border flex flex-col shrink-0 relative"
       >
         <div className="h-16 flex items-center gap-3 px-4 border-b border-sidebar-border">
-          {profile?.logoUrl ? (
-            <img 
-              src={profile.logoUrl} 
-              alt="Logo da empresa" 
-              className="w-9 h-9 rounded-xl object-contain shrink-0"
-            />
-          ) : (
-            <div className="w-9 h-9 rounded-xl gradient-primary flex items-center justify-center shrink-0">
-              <Camera className="w-5 h-5 text-primary-foreground" />
-            </div>
-          )}
+          <div className="w-9 h-9 rounded-xl gradient-primary flex items-center justify-center shrink-0">
+            <Camera className="w-5 h-5 text-primary-foreground" />
+          </div>
           {sidebarOpen && (
             <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="font-bold text-lg text-sidebar-foreground">
               PostaBooth
@@ -168,9 +160,17 @@ const Dashboard = () => {
                 className="pl-9 pr-4 py-2 w-64 rounded-lg border border-border bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:border-primary"
               />
             </div>
-            <div className="w-9 h-9 rounded-full gradient-primary flex items-center justify-center text-primary-foreground font-bold text-sm">
-              {userInitials}
-            </div>
+            {profile?.logoUrl ? (
+              <img 
+                src={profile.logoUrl} 
+                alt="Logo da empresa" 
+                className="w-9 h-9 rounded-full object-cover border border-border"
+              />
+            ) : (
+              <div className="w-9 h-9 rounded-full gradient-primary flex items-center justify-center text-primary-foreground font-bold text-sm">
+                {userInitials}
+              </div>
+            )}
           </div>
         </header>
 
