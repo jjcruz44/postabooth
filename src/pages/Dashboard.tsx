@@ -2,7 +2,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { 
   Camera, Calendar, FolderOpen, LayoutGrid, Settings, LogOut,
-  ChevronLeft, ChevronRight, Search, Bell, Sparkles, Loader2
+  ChevronLeft, ChevronRight, Search, Sparkles, Loader2
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useContentsDB, ContentItem } from "@/hooks/useContentsDB";
@@ -158,10 +158,6 @@ const Dashboard = () => {
                 className="pl-9 pr-4 py-2 w-64 rounded-lg border border-border bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:border-primary"
               />
             </div>
-            <button className="relative p-2 rounded-lg hover:bg-muted transition-colors">
-              <Bell className="w-5 h-5 text-muted-foreground" />
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-primary" />
-            </button>
             <div className="w-9 h-9 rounded-full gradient-primary flex items-center justify-center text-primary-foreground font-bold text-sm">
               {userInitials}
             </div>
