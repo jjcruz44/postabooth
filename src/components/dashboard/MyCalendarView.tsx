@@ -2,28 +2,28 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { 
   Calendar, CheckCircle2, XCircle, MinusCircle, 
-  Loader2, AlertCircle, FileText, Copy, Hash, Trash2
+  Loader2, AlertCircle, FileText, Copy, Hash, Trash2, ClipboardList
 } from "lucide-react";
 import { useCalendarPlanner, CalendarDay } from "@/hooks/useCalendarPlanner";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { useSavedPosts, SavedPost } from "@/hooks/useSavedPosts";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 type PostStatus = "postado" | "nao_postado" | "ignorado";
 
 interface DayWithStatus extends CalendarDay {
   status: PostStatus;
-}
-
-interface StandalonePost {
-  id: string;
-  title: string;
-  legenda: string | null;
-  hashtags: string[] | null;
-  type: string;
-  created_at: string;
 }
 
 const statusConfig: Record<PostStatus, { icon: React.ElementType; color: string; label: string }> = {
@@ -36,12 +36,11 @@ const STORAGE_KEY = "my_calendar_status";
 
 export function MyCalendarView() {
   const navigate = useNavigate();
-  const { user } = useAuth();
   const { toast } = useToast();
   const { calendar, initialLoading } = useCalendarPlanner();
+  const { posts: savedPosts, loading: loadingPosts, archivePost } = useSavedPosts();
   const [daysWithStatus, setDaysWithStatus] = useState<DayWithStatus[]>([]);
-  const [standalonePosts, setStandalonePosts] = useState<StandalonePost[]>([]);
-  const [loadingPosts, setLoadingPosts] = useState(true);
+  const [postToDelete, setPostToDelete] = useState<SavedPost | null>(null);
 
   // Load saved statuses from localStorage on mount
   useEffect(() => {
@@ -57,30 +56,6 @@ export function MyCalendarView() {
       setDaysWithStatus(withStatus);
     }
   }, [calendar]);
-
-  // Fetch standalone posts (without scheduled_date)
-  useEffect(() => {
-    const fetchStandalonePosts = async () => {
-      if (!user) return;
-      
-      try {
-        const { data, error } = await supabase
-          .from("contents")
-          .select("id, title, legenda, hashtags, type, created_at")
-          .eq("user_id", user.id)
-          .order("created_at", { ascending: false });
-
-        if (error) throw error;
-        setStandalonePosts(data || []);
-      } catch (error) {
-        console.error("Error fetching standalone posts:", error);
-      } finally {
-        setLoadingPosts(false);
-      }
-    };
-
-    fetchStandalonePosts();
-  }, [user]);
 
   // Save statuses to localStorage whenever they change
   const updateStatus = (dayNumber: number, newStatus: PostStatus) => {
@@ -136,27 +111,24 @@ export function MyCalendarView() {
     }
   };
 
-  const deletePost = async (postId: string) => {
-    try {
-      const { error } = await supabase
-        .from("contents")
-        .delete()
-        .eq("id", postId);
-
-      if (error) throw error;
-
-      setStandalonePosts((prev) => prev.filter((p) => p.id !== postId));
-      toast({
-        title: "Post excluído",
-        description: "O post foi removido com sucesso.",
-      });
-    } catch (error) {
-      toast({
-        title: "Erro ao excluir",
-        description: "Não foi possível excluir o post.",
-        variant: "destructive",
-      });
+  const copyAll = (post: SavedPost) => {
+    const parts: string[] = [];
+    if (post.short_caption) parts.push(post.short_caption);
+    if (post.expanded_text) parts.push(post.expanded_text);
+    if (post.hashtags && post.hashtags.length > 0) {
+      parts.push(post.hashtags.join(" "));
     }
+    copyToClipboard(parts.join("\n\n"), "Conteúdo");
+  };
+
+  const handleDeletePost = async () => {
+    if (!postToDelete) return;
+    await archivePost(postToDelete.id);
+    setPostToDelete(null);
+  };
+
+  const getSourceLabel = (source: string) => {
+    return source === "gerador" ? "Gerador" : "Sugestões IA";
   };
 
   if (initialLoading) {
@@ -288,12 +260,12 @@ export function MyCalendarView() {
       <div>
         <div className="flex items-center gap-3 mb-4">
           <div className="w-10 h-10 rounded-xl bg-secondary flex items-center justify-center">
-            <FileText className="w-5 h-5 text-secondary-foreground" />
+            <ClipboardList className="w-5 h-5 text-secondary-foreground" />
           </div>
           <div>
             <h3 className="text-lg font-semibold text-foreground">Posts Avulsos</h3>
             <p className="text-sm text-muted-foreground">
-              Conteúdos salvos para usar quando quiser
+              Conteúdos salvos do Gerador e das Sugestões da IA
             </p>
           </div>
         </div>
@@ -302,9 +274,9 @@ export function MyCalendarView() {
           <div className="flex items-center justify-center py-8">
             <Loader2 className="w-6 h-6 animate-spin text-primary" />
           </div>
-        ) : standalonePosts.length > 0 ? (
+        ) : savedPosts.length > 0 ? (
           <div className="space-y-3">
-            {standalonePosts.map((post, index) => (
+            {savedPosts.map((post, index) => (
               <motion.div
                 key={post.id}
                 initial={{ opacity: 0, y: 10 }}
@@ -316,7 +288,7 @@ export function MyCalendarView() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-2">
                       <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium">
-                        {post.type}
+                        {getSourceLabel(post.source)}
                       </span>
                       <span className="text-xs text-muted-foreground">
                         {new Date(post.created_at).toLocaleDateString("pt-BR")}
@@ -325,19 +297,19 @@ export function MyCalendarView() {
                     <h4 className="font-medium text-foreground mb-1 line-clamp-1">
                       {post.title}
                     </h4>
-                    {post.legenda && (
+                    {post.short_caption && (
                       <p className="text-sm text-muted-foreground line-clamp-2">
-                        {post.legenda}
+                        {post.short_caption}
                       </p>
                     )}
                   </div>
                   
                   <div className="flex items-center gap-1 shrink-0">
-                    {post.legenda && (
+                    {post.short_caption && (
                       <Button
                         variant="ghost"
                         size="icon"
-                        onClick={() => copyToClipboard(post.legenda!, "Legenda")}
+                        onClick={() => copyToClipboard(post.short_caption!, "Legenda")}
                         className="h-8 w-8"
                         title="Copiar legenda"
                       >
@@ -358,7 +330,16 @@ export function MyCalendarView() {
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={() => deletePost(post.id)}
+                      onClick={() => copyAll(post)}
+                      className="h-8 w-8"
+                      title="Copiar tudo"
+                    >
+                      <ClipboardList className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setPostToDelete(post)}
                       className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
                       title="Excluir post"
                     >
@@ -376,11 +357,29 @@ export function MyCalendarView() {
               Nenhum post avulso salvo ainda
             </p>
             <p className="text-sm text-muted-foreground mt-1">
-              Posts criados no Gerador sem data aparecerão aqui
+              Salve posts no Gerador ou nas Sugestões da IA
             </p>
           </div>
         )}
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!postToDelete} onOpenChange={() => setPostToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir post?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir "{postToDelete?.title}"? Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeletePost} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
