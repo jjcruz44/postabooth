@@ -44,24 +44,33 @@ function formatRoteiro(roteiro: RoteiroType): string {
   if (Array.isArray(roteiro)) {
     return roteiro
       .map((item, index) => {
-        if ("conteudo" in item) {
-          // Stories format
-          const storyItem = item as StorySlide;
-          let text = `Story ${index + 1}: ${storyItem.conteudo}`;
-          if (storyItem.elemento_interativo_sugerido) {
-            text += `\n  → Interativo: ${storyItem.elemento_interativo_sugerido}`;
-          }
-          return text;
-        } else if ("titulo" in item || "numero" in item) {
-          // Carousel format
-          const carouselItem = item as CarouselSlide;
-          let text = `Slide ${carouselItem.numero || index + 1}`;
-          if (carouselItem.titulo) text += `: ${carouselItem.titulo}`;
-          if (carouselItem.conteudo) text += `\n  ${carouselItem.conteudo}`;
-          if (carouselItem.sugestao_visual) text += `\n  → Visual: ${carouselItem.sugestao_visual}`;
-          return text;
+        // Handle string items in array
+        if (typeof item === "string") {
+          return item;
         }
-        return JSON.stringify(item);
+        
+        // Ensure item is an object before using 'in' operator
+        if (item && typeof item === "object") {
+          if ("conteudo" in item) {
+            // Stories format
+            const storyItem = item as StorySlide;
+            let text = `Story ${index + 1}: ${storyItem.conteudo}`;
+            if (storyItem.elemento_interativo_sugerido) {
+              text += `\n  → Interativo: ${storyItem.elemento_interativo_sugerido}`;
+            }
+            return text;
+          } else if ("titulo" in item || "numero" in item) {
+            // Carousel format
+            const carouselItem = item as CarouselSlide;
+            let text = `Slide ${carouselItem.numero || index + 1}`;
+            if (carouselItem.titulo) text += `: ${carouselItem.titulo}`;
+            if (carouselItem.conteudo) text += `\n  ${carouselItem.conteudo}`;
+            if (carouselItem.sugestao_visual) text += `\n  → Visual: ${carouselItem.sugestao_visual}`;
+            return text;
+          }
+        }
+        
+        return typeof item === "object" ? JSON.stringify(item) : String(item);
       })
       .join("\n\n");
   }
