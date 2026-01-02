@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   CalendarDays, Sparkles, Loader2, Target, 
@@ -7,7 +7,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { useCalendarPlanner, CalendarDay } from "@/hooks/useCalendarPlanner";
+import { useCalendarPlanner } from "@/hooks/useCalendarPlanner";
 import { useToast } from "@/hooks/use-toast";
 
 const categoryConfig: Record<string, { icon: React.ElementType; color: string; label: string }> = {
@@ -27,12 +27,19 @@ const goalSuggestions = [
 ];
 
 export function PlannerView() {
-  const { calendar, loading, error, generateCalendar, clearCalendar } = useCalendarPlanner();
+  const { calendar, monthlyGoal: savedGoal, loading, initialLoading, error, generateCalendar, clearCalendar } = useCalendarPlanner();
   const { toast } = useToast();
-  const [monthlyGoal, setMonthlyGoal] = useState("");
+  const [goalInput, setGoalInput] = useState("");
+
+  // Sync goal input with saved goal when loaded
+  useEffect(() => {
+    if (savedGoal && !goalInput) {
+      setGoalInput(savedGoal);
+    }
+  }, [savedGoal]);
 
   const handleGenerate = async () => {
-    if (!monthlyGoal.trim()) {
+    if (!goalInput.trim()) {
       toast({
         title: "Objetivo necessário",
         description: "Defina o objetivo principal do mês para gerar o calendário.",
@@ -42,7 +49,7 @@ export function PlannerView() {
     }
 
     try {
-      await generateCalendar(monthlyGoal);
+      await generateCalendar(goalInput);
       toast({
         title: "Calendário gerado!",
         description: "Seu planejamento de 30 dias está pronto.",
@@ -57,7 +64,12 @@ export function PlannerView() {
   };
 
   const handleSelectGoal = (goal: string) => {
-    setMonthlyGoal(goal);
+    setGoalInput(goal);
+  };
+
+  const handleNewCalendar = () => {
+    clearCalendar();
+    setGoalInput("");
   };
 
   const getCategoryStats = () => {
@@ -82,7 +94,7 @@ export function PlannerView() {
           </p>
         </div>
         {calendar.length > 0 && (
-          <Button variant="outline" onClick={clearCalendar} className="gap-2">
+          <Button variant="outline" onClick={handleNewCalendar} className="gap-2">
             <RefreshCw className="w-4 h-4" />
             Novo calendário
           </Button>
@@ -90,7 +102,17 @@ export function PlannerView() {
       </div>
 
       <AnimatePresence mode="wait">
-        {calendar.length === 0 ? (
+        {initialLoading ? (
+          <motion.div
+            key="loading"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="flex items-center justify-center py-20"
+          >
+            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+          </motion.div>
+        ) : calendar.length === 0 ? (
           <motion.div
             key="form"
             initial={{ opacity: 0, y: 20 }}
@@ -106,8 +128,8 @@ export function PlannerView() {
               </div>
               
               <Textarea
-                value={monthlyGoal}
-                onChange={(e) => setMonthlyGoal(e.target.value)}
+                value={goalInput}
+                onChange={(e) => setGoalInput(e.target.value)}
                 placeholder="Ex: Aumentar pedidos de orçamento para casamentos"
                 className="min-h-24 resize-none"
               />
@@ -120,7 +142,7 @@ export function PlannerView() {
                       key={goal}
                       onClick={() => handleSelectGoal(goal)}
                       className={`px-3 py-1.5 text-sm rounded-full border transition-all ${
-                        monthlyGoal === goal
+                        goalInput === goal
                           ? "bg-primary text-primary-foreground border-primary"
                           : "bg-muted/50 text-muted-foreground border-border hover:border-primary/50"
                       }`}
@@ -154,7 +176,7 @@ export function PlannerView() {
             <Button
               size="lg"
               onClick={handleGenerate}
-              disabled={loading || !monthlyGoal.trim()}
+              disabled={loading || !goalInput.trim()}
               className="w-full gap-2 h-14 text-lg"
             >
               {loading ? (
@@ -208,7 +230,7 @@ export function PlannerView() {
                   Calendário gerado com sucesso
                 </div>
                 <p className="text-sm text-muted-foreground mt-1">
-                  Objetivo: {monthlyGoal}
+                  Objetivo: {savedGoal}
                 </p>
               </div>
 
