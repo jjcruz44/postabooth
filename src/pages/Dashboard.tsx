@@ -20,6 +20,7 @@ import { ContentSuggestion } from "@/hooks/useContentSuggestions";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { ShareButton } from "@/components/dashboard/ShareButton";
 
 type ViewType = "planejamento" | "gerador" | "sugestoes" | "meu-calendario";
 
@@ -251,6 +252,21 @@ const Dashboard = () => {
           </h1>
           
           <div className="flex items-center gap-2 md:gap-3 shrink-0">
+            {/* Share button */}
+            <ShareButton variant="ghost" size="sm" className="hidden sm:flex" />
+            <Button variant="ghost" size="sm" className="sm:hidden w-8 h-8 p-0" onClick={() => {
+              if (navigator.share) {
+                navigator.share({
+                  title: "Postabooth",
+                  text: "Conheci o Postabooth: ele cria um calendário de posts pronto para empresas de cabine/totem fecharem mais eventos.",
+                  url: "https://postabooth.lovable.app/",
+                });
+              }
+            }}>
+              <span className="sr-only">Compartilhar</span>
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" x2="12" y1="2" y2="15"/></svg>
+            </Button>
+            
             {/* Search - hide on mobile */}
             <div className="relative hidden md:block">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
