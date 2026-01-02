@@ -6,6 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import { ContentType } from "@/hooks/useContentsDB";
 import { useContentSuggestions, ContentSuggestion } from "@/hooks/useContentSuggestions";
 import { useSavedPosts } from "@/hooks/useSavedPosts";
+import { ShareButton } from "./ShareButton";
 
 const typeIcons: Record<ContentType, React.ElementType> = {
   reels: Video,
@@ -195,6 +196,11 @@ export function SuggestionsView({ onUseSuggestion }: SuggestionsViewProps) {
           </p>
         </div>
       )}
+
+      {/* Share Button */}
+      <div className="flex justify-center pt-2">
+        <ShareButton variant="outline" className="gap-2" />
+      </div>
     </div>
   );
 }
