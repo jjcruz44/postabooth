@@ -85,53 +85,45 @@ serve(async (req) => {
       throw new Error('LOVABLE_API_KEY is not configured');
     }
 
-    // Enhanced system prompt with brand personality
-    const systemPrompt = `Você é um especialista em marketing digital para profissionais de cabines fotográficas, espelho mágico e totens para eventos. Seu trabalho é criar conteúdo estratégico para redes sociais que gere engajamento e conversões.
+    // Professional social media copywriter prompt
+    const systemPrompt = `Você é um copywriter profissional de redes sociais especializado em pequenos negócios que alugam cabines fotográficas, totens e plataformas 360 para eventos.
 
-IDENTIDADE DA MARCA DO USUÁRIO:
-${brandStyle ? `Estilo/Personalidade da Marca: ${brandStyle}` : 'Estilo profissional e acessível'}
-Serviços oferecidos: ${userServices}
-Tipos de eventos que atende: ${userEvents}
-${userCity ? `Localização: ${userCity}` : ''}
+Crie um post completo para Instagram baseado nas informações fornecidas.
 
-REGRAS DE CRIAÇÃO:
-1. TODO conteúdo deve refletir a personalidade e tom de voz da marca definidos acima
-2. Seja específico para o nicho de cabines/totens fotográficos
-3. Adapte o tom de acordo com o tipo de evento e estilo da marca
-4. Foque em conversão, não apenas engajamento
-5. Use linguagem emocional quando apropriado, mas sempre alinhada à marca
-6. Inclua CTAs claros e diretos
-7. Escreva sempre em português brasileiro`;
+Requisitos:
+1) Escreva uma legenda envolvente para Instagram (curta a média).
+2) Escreva um texto complementar sugerido (mais explicativo, opcional).
+3) Gere 12-18 hashtags com foco local + nicho (eventos + cidade).
+4) Adicione UM CTA claro no final da legenda, alinhado ao objetivo:
+   - orçamentos → peça data + cidade no DM/WhatsApp
+   - preencher datas vazias → urgência + vagas limitadas
+   - aumentar seguidores → comentar/salvar/compartilhar
+   - reativar contatos → responda no WhatsApp/DM
+5) Evite afirmações genéricas ("melhor", "número um") e evite emojis excessivamente repetitivos.`;
 
-    // Build user prompt with main idea as priority
-    let userPrompt = `Crie um conteúdo completo para ${contentType.toUpperCase()} sobre serviços de cabines fotográficas/espelho mágico/totens.
+    // Build user prompt with all context
+    let userPrompt = `Negócio:
+- Tipo: Aluguel de ${userServices}
+- Cidade/Região: ${userCity || 'Brasil'}
+- Público principal: Noivos, organizadores de eventos corporativos e festas
+- Tom: ${brandStyle || 'Profissional e acessível'}
 
-`;
-
-    // Main idea as primary reference if provided
-    if (mainIdea && mainIdea.trim()) {
-      userPrompt += `🎯 IDEIA PRINCIPAL (USE COMO BASE CENTRAL DO CONTEÚDO):
-"${mainIdea}"
-
-O conteúdo DEVE ser construído em torno dessa ideia principal. Ela é o ponto de partida e referência mais importante.
-
-`;
-    }
-
-    userPrompt += `ESPECIFICAÇÕES ADICIONAIS:
-- Tipo de conteúdo: ${contentType}
-- Tipo de evento alvo: ${eventType}
+Dia do calendário:
+- Tipo de conteúdo: ${contentType.toUpperCase()}
+- Categoria do conteúdo: ${eventType}
 - Objetivo do post: ${objective}
+${mainIdea ? `- Ideia do conteúdo: ${mainIdea}` : ''}
 
 VOCÊ DEVE RETORNAR UM JSON COM EXATAMENTE ESTA ESTRUTURA:
 
 {
   "titulo": "Título atrativo do post (máximo 60 caracteres)",
   "ideia": "Descrição breve da ideia central do conteúdo (1-2 frases)",
-  "roteiro": ${contentType === 'reels' ? '"Roteiro detalhado para o Reels com:\n- Hook inicial (primeiros 3 segundos)\n- Desenvolvimento (pontos principais)\n- CTA final\nIncluir sugestões de transições e textos na tela"' : contentType === 'carrossel' ? '"Array com 5-7 slides, cada um contendo:\n- Número do slide\n- Título do slide\n- Conteúdo/texto do slide\n- Sugestão visual"' : '"Sequência de 3-5 stories com:\n- Conteúdo de cada story\n- Elemento interativo sugerido (enquete, quiz, etc)"'},
-  "legenda": "Legenda persuasiva para o post com:\n- Gancho inicial\n- Desenvolvimento\n- CTA\n- Máximo 2200 caracteres",
-  "cta": "Chamada para ação principal (ex: 'Garanta sua cabine agora!')",
-  "hashtags": ["array", "de", "10", "hashtags", "relevantes"]
+  "roteiro": ${contentType === 'reels' ? '"Roteiro detalhado para o Reels com:\\n- Hook inicial (primeiros 3 segundos)\\n- Desenvolvimento (pontos principais)\\n- CTA final\\nIncluir sugestões de transições e textos na tela"' : contentType === 'carrossel' ? '"Array com 5-7 slides, cada um contendo:\\n- Número do slide\\n- Título do slide\\n- Conteúdo/texto do slide\\n- Sugestão visual"' : '"Sequência de 3-5 stories com:\\n- Conteúdo de cada story\\n- Elemento interativo sugerido (enquete, quiz, etc)"'},
+  "legenda": "Legenda persuasiva curta a média com gancho inicial, desenvolvimento e CTA alinhado ao objetivo",
+  "textoSugerido": "Texto complementar mais explicativo (opcional, para usar em outras plataformas)",
+  "cta": "Chamada para ação principal alinhada ao objetivo",
+  "hashtags": ["array", "de", "12", "a", "18", "hashtags", "com", "foco", "local", "e", "nicho"]
 }
 
 Retorne APENAS o JSON, sem markdown ou explicações adicionais.`;
