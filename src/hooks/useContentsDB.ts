@@ -13,7 +13,7 @@ export interface ContentItem {
   status: ContentStatus;
   objective?: string;
   eventType?: string;
-  date: string;
+  date?: string;
   roteiro?: string;
   legenda?: string;
   cta?: string;
