@@ -11,6 +11,7 @@ import { useCalendarPlanner, CalendarDay } from "@/hooks/useCalendarPlanner";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { DayContentModal } from "./DayContentModal";
+import { ShareButton } from "./ShareButton";
 
 const categoryConfig: Record<string, { icon: React.ElementType; color: string; label: string }> = {
   "prova social": { icon: Users, color: "bg-success/10 text-success border-success/20", label: "Prova Social" },
@@ -232,6 +233,19 @@ export function PlannerView() {
                   </div>
                 );
               })}
+            </div>
+
+            {/* Share CTA after success */}
+            <div className="bg-gradient-to-r from-primary/10 to-primary/5 rounded-xl border border-primary/20 p-4 md:p-5 flex flex-col sm:flex-row items-center justify-between gap-3">
+              <div className="text-center sm:text-left">
+                <p className="text-sm md:text-base font-medium text-foreground">
+                  Gostou do Postabooth?
+                </p>
+                <p className="text-xs md:text-sm text-muted-foreground">
+                  Compartilhe com outros donos de cabine/totem!
+                </p>
+              </div>
+              <ShareButton variant="default" className="shrink-0" />
             </div>
 
             {/* Calendar Grid */}
