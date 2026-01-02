@@ -68,7 +68,6 @@ export function MyCalendarView() {
           .from("contents")
           .select("id, title, legenda, hashtags, type, created_at")
           .eq("user_id", user.id)
-          .is("scheduled_date", null)
           .order("created_at", { ascending: false });
 
         if (error) throw error;
