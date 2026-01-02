@@ -234,7 +234,7 @@ export function GeneratorView({ onSaveContent, initialSuggestion, onSuggestionUs
   };
 
   const handleSave = () => {
-    if (!generatedContent || !selectedDate) return;
+    if (!generatedContent) return;
 
     onSaveContent({
       title: generatedContent.titulo,
@@ -245,12 +245,14 @@ export function GeneratorView({ onSaveContent, initialSuggestion, onSuggestionUs
       legenda: generatedContent.legenda,
       cta: generatedContent.cta,
       hashtags: generatedContent.hashtags,
-      date: selectedDate.toISOString().split("T")[0],
+      date: selectedDate ? selectedDate.toISOString().split("T")[0] : undefined,
     });
 
     toast({
       title: "Conteúdo salvo!",
-      description: `Agendado para ${format(selectedDate, "dd 'de' MMMM", { locale: ptBR })}.`,
+      description: selectedDate 
+        ? `Agendado para ${format(selectedDate, "dd 'de' MMMM", { locale: ptBR })}.`
+        : "Salvo em Posts Avulsos.",
     });
 
     setGeneratedContent(null);
