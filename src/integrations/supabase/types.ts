@@ -65,6 +65,33 @@ export type Database = {
         }
         Relationships: []
       }
+      monthly_planners: {
+        Row: {
+          calendar_data: Json
+          created_at: string
+          id: string
+          monthly_goal: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          calendar_data: Json
+          created_at?: string
+          id?: string
+          monthly_goal: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          calendar_data?: Json
+          created_at?: string
+          id?: string
+          monthly_goal?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           brand_style: string | null
