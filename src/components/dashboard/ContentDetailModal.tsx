@@ -57,57 +57,66 @@ export function ContentDetailModal({ content, onClose, onUpdateStatus }: Content
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 bg-foreground/50 z-50 flex items-center justify-center p-4"
+        className="fixed inset-0 bg-foreground/50 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4"
         onClick={onClose}
       >
         <motion.div
-          initial={{ opacity: 0, scale: 0.95, y: 20 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.95, y: 20 }}
-          className="bg-card rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden"
+          initial={{ opacity: 0, y: 100 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: 100 }}
+          className="bg-card rounded-t-2xl sm:rounded-2xl w-full sm:max-w-2xl max-h-[90vh] sm:max-h-[85vh] overflow-hidden flex flex-col"
           onClick={(e) => e.stopPropagation()}
         >
+          {/* Mobile drag indicator */}
+          <div className="sm:hidden flex justify-center py-2">
+            <div className="w-10 h-1 bg-muted-foreground/30 rounded-full" />
+          </div>
+          
           {/* Header */}
-          <div className="p-4 border-b border-border flex items-start justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
-                <TypeIcon className="w-6 h-6 text-primary" />
+          <div className="p-3 md:p-4 border-b border-border flex items-start justify-between gap-3">
+            <div className="flex items-start gap-3 min-w-0">
+              <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                <TypeIcon className="w-5 h-5 md:w-6 md:h-6 text-primary" />
               </div>
-              <div>
-                <h2 className="font-semibold text-foreground text-lg">{content.title}</h2>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
+              <div className="min-w-0">
+                <h2 className="font-semibold text-foreground text-base md:text-lg line-clamp-2">{content.title}</h2>
+                <div className="flex items-center gap-1.5 md:gap-2 text-xs md:text-sm text-muted-foreground mt-1 flex-wrap">
                   <span className="capitalize">{content.type}</span>
                   <span>•</span>
                   <span className="flex items-center gap-1">
                     <Target className="w-3 h-3" />
                     {content.objective}
                   </span>
-                  <span>•</span>
-                  <span>{content.eventType}</span>
+                  {content.eventType && (
+                    <>
+                      <span className="hidden sm:inline">•</span>
+                      <span className="hidden sm:inline">{content.eventType}</span>
+                    </>
+                  )}
                 </div>
               </div>
             </div>
             <button
               onClick={onClose}
-              className="p-2 rounded-lg hover:bg-muted transition-colors"
+              className="p-2 rounded-lg hover:bg-muted transition-colors shrink-0"
             >
               <X className="w-5 h-5 text-muted-foreground" />
             </button>
           </div>
 
           {/* Content */}
-          <div className="p-4 space-y-6 max-h-[60vh] overflow-y-auto">
+          <div className="p-3 md:p-4 space-y-4 md:space-y-6 flex-1 overflow-y-auto">
             {/* Status selector */}
             <div>
-              <label className="text-sm font-medium text-foreground mb-3 block">
+              <label className="text-sm font-medium text-foreground mb-2 md:mb-3 block">
                 Status
               </label>
-              <div className="flex gap-2 flex-wrap">
+              <div className="flex gap-1.5 md:gap-2 flex-wrap">
                 {statuses.map((status) => (
                   <button
                     key={status}
                     onClick={() => onUpdateStatus(content.id, status)}
-                    className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
+                    className={`px-2.5 md:px-3 py-1 md:py-1.5 rounded-full text-xs md:text-sm font-medium transition-all ${
                       content.status === status
                         ? statusColors[status]
                         : "bg-muted/50 text-muted-foreground hover:bg-muted"
@@ -120,14 +129,14 @@ export function ContentDetailModal({ content, onClose, onUpdateStatus }: Content
             </div>
 
             {/* Date */}
-            <div className="flex items-center gap-2 text-sm">
+            <div className="flex items-center gap-2 text-xs md:text-sm">
               <Calendar className="w-4 h-4 text-muted-foreground" />
               <span className="text-muted-foreground">Data programada:</span>
               <span className="font-medium text-foreground">
                 {new Date(content.date).toLocaleDateString("pt-BR", {
-                  weekday: "long",
+                  weekday: "short",
                   day: "numeric",
-                  month: "long",
+                  month: "short",
                 })}
               </span>
             </div>
@@ -141,7 +150,7 @@ export function ContentDetailModal({ content, onClose, onUpdateStatus }: Content
                   </span>
                   <button
                     onClick={() => copyToClipboard(content.roteiro!, "Roteiro")}
-                    className="p-1 rounded hover:bg-muted transition-colors"
+                    className="p-1.5 rounded hover:bg-muted transition-colors"
                   >
                     {copiedField === "Roteiro" ? (
                       <Check className="w-4 h-4 text-success" />
@@ -150,7 +159,7 @@ export function ContentDetailModal({ content, onClose, onUpdateStatus }: Content
                     )}
                   </button>
                 </div>
-                <div className="bg-muted/50 rounded-lg p-3 text-sm text-foreground whitespace-pre-wrap">
+                <div className="bg-muted/50 rounded-lg p-2.5 md:p-3 text-xs md:text-sm text-foreground whitespace-pre-wrap break-words">
                   {content.roteiro}
                 </div>
               </div>
@@ -165,7 +174,7 @@ export function ContentDetailModal({ content, onClose, onUpdateStatus }: Content
                   </span>
                   <button
                     onClick={() => copyToClipboard(content.legenda!, "Legenda")}
-                    className="p-1 rounded hover:bg-muted transition-colors"
+                    className="p-1.5 rounded hover:bg-muted transition-colors"
                   >
                     {copiedField === "Legenda" ? (
                       <Check className="w-4 h-4 text-success" />
@@ -174,7 +183,7 @@ export function ContentDetailModal({ content, onClose, onUpdateStatus }: Content
                     )}
                   </button>
                 </div>
-                <div className="bg-muted/50 rounded-lg p-3 text-sm text-foreground whitespace-pre-wrap">
+                <div className="bg-muted/50 rounded-lg p-2.5 md:p-3 text-xs md:text-sm text-foreground whitespace-pre-wrap break-words">
                   {content.legenda}
                 </div>
               </div>
@@ -189,7 +198,7 @@ export function ContentDetailModal({ content, onClose, onUpdateStatus }: Content
                   </span>
                   <button
                     onClick={() => copyToClipboard(content.cta!, "CTA")}
-                    className="p-1 rounded hover:bg-muted transition-colors"
+                    className="p-1.5 rounded hover:bg-muted transition-colors"
                   >
                     {copiedField === "CTA" ? (
                       <Check className="w-4 h-4 text-success" />
@@ -198,7 +207,7 @@ export function ContentDetailModal({ content, onClose, onUpdateStatus }: Content
                     )}
                   </button>
                 </div>
-                <p className="text-sm font-medium text-primary">{content.cta}</p>
+                <p className="text-xs md:text-sm font-medium text-primary break-words">{content.cta}</p>
               </div>
             )}
 
@@ -214,7 +223,7 @@ export function ContentDetailModal({ content, onClose, onUpdateStatus }: Content
                     onClick={() =>
                       copyToClipboard(content.hashtags!.map((h) => `#${h}`).join(" "), "Hashtags")
                     }
-                    className="p-1 rounded hover:bg-muted transition-colors"
+                    className="p-1.5 rounded hover:bg-muted transition-colors"
                   >
                     {copiedField === "Hashtags" ? (
                       <Check className="w-4 h-4 text-success" />
@@ -223,11 +232,11 @@ export function ContentDetailModal({ content, onClose, onUpdateStatus }: Content
                     )}
                   </button>
                 </div>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-1.5 md:gap-2">
                   {content.hashtags.map((tag, i) => (
                     <span
                       key={i}
-                      className="px-2 py-1 bg-primary/10 text-primary text-xs rounded-full font-medium"
+                      className="px-2 py-0.5 md:py-1 bg-primary/10 text-primary text-xs rounded-full font-medium"
                     >
                       #{tag}
                     </span>
@@ -238,11 +247,11 @@ export function ContentDetailModal({ content, onClose, onUpdateStatus }: Content
 
             {/* Empty state for content without details */}
             {!content.roteiro && !content.legenda && !content.cta && (
-              <div className="bg-muted/30 rounded-xl p-6 text-center border border-dashed border-border">
-                <p className="text-muted-foreground">
+              <div className="bg-muted/30 rounded-xl p-4 md:p-6 text-center border border-dashed border-border">
+                <p className="text-sm text-muted-foreground">
                   Este conteúdo ainda não tem roteiro, legenda ou CTA.
                 </p>
-                <p className="text-sm text-muted-foreground mt-1">
+                <p className="text-xs text-muted-foreground mt-1">
                   Use o Gerador de Conteúdo para criar automaticamente.
                 </p>
               </div>
@@ -250,8 +259,8 @@ export function ContentDetailModal({ content, onClose, onUpdateStatus }: Content
           </div>
 
           {/* Footer */}
-          <div className="p-4 border-t border-border">
-            <Button variant="outline" className="w-full" onClick={onClose}>
+          <div className="p-3 md:p-4 border-t border-border">
+            <Button variant="outline" className="w-full h-10 md:h-11" onClick={onClose}>
               Fechar
             </Button>
           </div>
