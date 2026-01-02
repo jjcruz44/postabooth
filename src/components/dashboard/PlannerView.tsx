@@ -108,7 +108,7 @@ export function PlannerView() {
         {calendar.length > 0 && (
           <Button variant="outline" onClick={handleNewCalendar} className="gap-2">
             <RefreshCw className="w-4 h-4" />
-            Novo calendário
+            Novo planejamento
           </Button>
         )}
       </div>
