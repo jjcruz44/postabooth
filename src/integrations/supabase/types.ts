@@ -134,6 +134,42 @@ export type Database = {
         }
         Relationships: []
       }
+      saved_posts: {
+        Row: {
+          archived: boolean
+          created_at: string
+          expanded_text: string | null
+          hashtags: string[] | null
+          id: string
+          short_caption: string | null
+          source: string
+          title: string
+          user_id: string
+        }
+        Insert: {
+          archived?: boolean
+          created_at?: string
+          expanded_text?: string | null
+          hashtags?: string[] | null
+          id?: string
+          short_caption?: string | null
+          source: string
+          title: string
+          user_id: string
+        }
+        Update: {
+          archived?: boolean
+          created_at?: string
+          expanded_text?: string | null
+          hashtags?: string[] | null
+          id?: string
+          short_caption?: string | null
+          source?: string
+          title?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       schedules: {
         Row: {
           content_id: string | null

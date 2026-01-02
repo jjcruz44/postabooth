@@ -1,10 +1,11 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { Video, Image, MessageSquare, RefreshCw, ArrowRight, Loader2, Lightbulb, Sparkles } from "lucide-react";
+import { Video, Image, MessageSquare, RefreshCw, ArrowRight, Loader2, Lightbulb, Sparkles, Save, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { ContentType } from "@/hooks/useContentsDB";
 import { useContentSuggestions, ContentSuggestion } from "@/hooks/useContentSuggestions";
+import { useSavedPosts } from "@/hooks/useSavedPosts";
 
 const typeIcons: Record<ContentType, React.ElementType> = {
   reels: Video,
@@ -19,6 +20,9 @@ interface SuggestionsViewProps {
 export function SuggestionsView({ onUseSuggestion }: SuggestionsViewProps) {
   const { toast } = useToast();
   const { suggestions, loading, fetchSuggestions, refreshSuggestions } = useContentSuggestions();
+  const { savePost } = useSavedPosts();
+  const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
+  const [savingId, setSavingId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchSuggestions();
@@ -30,6 +34,27 @@ export function SuggestionsView({ onUseSuggestion }: SuggestionsViewProps) {
       title: "Sugestão selecionada!",
       description: "Redirecionando para o Gerador de Posts.",
     });
+  };
+
+  const handleSaveSuggestion = async (e: React.MouseEvent, suggestion: ContentSuggestion) => {
+    e.stopPropagation();
+    setSavingId(suggestion.id);
+
+    const result = await savePost({
+      source: "sugestoes_ia",
+      title: suggestion.title,
+      short_caption: suggestion.description,
+    });
+
+    if (result) {
+      setSavedIds((prev) => new Set([...prev, suggestion.id]));
+      toast({
+        title: "Sugestão salva!",
+        description: "Salva em Posts Avulsos.",
+      });
+    }
+
+    setSavingId(null);
   };
 
   return (
@@ -112,6 +137,33 @@ export function SuggestionsView({ onUseSuggestion }: SuggestionsViewProps) {
                     {suggestion.objective}
                   </span>
                 </div>
+                <div className="flex items-center gap-2 mt-3 pt-3 border-t border-primary/10">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex-1 gap-1"
+                    onClick={(e) => handleSaveSuggestion(e, suggestion)}
+                    disabled={savingId === suggestion.id || savedIds.has(suggestion.id)}
+                  >
+                    {savingId === suggestion.id ? (
+                      <Loader2 className="w-3 h-3 animate-spin" />
+                    ) : savedIds.has(suggestion.id) ? (
+                      <Check className="w-3 h-3" />
+                    ) : (
+                      <Save className="w-3 h-3" />
+                    )}
+                    {savedIds.has(suggestion.id) ? "Salvo" : "Salvar"}
+                  </Button>
+                  <Button
+                    variant="default"
+                    size="sm"
+                    className="flex-1 gap-1"
+                    onClick={() => handleUseSuggestion(suggestion)}
+                  >
+                    <Sparkles className="w-3 h-3" />
+                    Usar
+                  </Button>
+                </div>
               </motion.div>
             );
           })}
@@ -138,7 +190,7 @@ export function SuggestionsView({ onUseSuggestion }: SuggestionsViewProps) {
       {suggestions.length > 0 && (
         <div className="bg-muted/50 rounded-lg p-4 border border-border">
           <p className="text-sm text-muted-foreground text-center">
-            💡 <strong>Dica:</strong> Clique em uma sugestão para ir direto ao Gerador de Posts com a ideia preenchida
+            💡 <strong>Dica:</strong> Use "Salvar" para guardar em Posts Avulsos ou "Usar" para ir ao Gerador
           </p>
         </div>
       )}

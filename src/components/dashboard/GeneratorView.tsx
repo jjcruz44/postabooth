@@ -9,6 +9,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { ContentType } from "@/hooks/useContentsDB";
+import { useSavedPosts } from "@/hooks/useSavedPosts";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useAuth } from "@/contexts/AuthContext";
@@ -112,6 +113,7 @@ interface GeneratorViewProps {
 export function GeneratorView({ onSaveContent, initialSuggestion, onSuggestionUsed }: GeneratorViewProps) {
   const { toast } = useToast();
   const { session, loading: authLoading } = useAuth();
+  const { savePost } = useSavedPosts();
   const [selectedContentType, setSelectedContentType] = useState<ContentType>("reels");
   const [selectedEventType, setSelectedEventType] = useState("Casamento");
   const [selectedObjective, setSelectedObjective] = useState("Autoridade");
@@ -233,29 +235,41 @@ export function GeneratorView({ onSaveContent, initialSuggestion, onSuggestionUs
     });
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!generatedContent) return;
 
-    onSaveContent({
+    // Save to saved_posts table
+    const savedPost = await savePost({
+      source: "gerador",
       title: generatedContent.titulo,
-      type: selectedContentType,
-      objective: selectedObjective,
-      eventType: selectedEventType,
-      roteiro: formatRoteiro(generatedContent.roteiro),
-      legenda: generatedContent.legenda,
-      cta: generatedContent.cta,
+      short_caption: generatedContent.legenda,
+      expanded_text: formatRoteiro(generatedContent.roteiro),
       hashtags: generatedContent.hashtags,
-      date: selectedDate ? selectedDate.toISOString().split("T")[0] : undefined,
     });
 
-    toast({
-      title: "Conteúdo salvo!",
-      description: selectedDate 
-        ? `Agendado para ${format(selectedDate, "dd 'de' MMMM", { locale: ptBR })}.`
-        : "Salvo em Posts Avulsos.",
-    });
+    if (savedPost) {
+      // Also save to contents if date is selected (for calendar view)
+      if (selectedDate) {
+        onSaveContent({
+          title: generatedContent.titulo,
+          type: selectedContentType,
+          objective: selectedObjective,
+          eventType: selectedEventType,
+          roteiro: formatRoteiro(generatedContent.roteiro),
+          legenda: generatedContent.legenda,
+          cta: generatedContent.cta,
+          hashtags: generatedContent.hashtags,
+          date: selectedDate.toISOString().split("T")[0],
+        });
+      }
 
-    setGeneratedContent(null);
+      toast({
+        title: "Conteúdo salvo!",
+        description: "Salvo em Posts Avulsos.",
+      });
+
+      setGeneratedContent(null);
+    }
   };
 
   return (
