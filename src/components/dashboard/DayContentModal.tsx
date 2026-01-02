@@ -29,20 +29,19 @@ interface DayContentModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   day: CalendarDay | null;
-  isPremium: boolean;
 }
 
 const FREE_DAYS_LIMIT = 3;
 
-export function DayContentModal({ open, onOpenChange, day, isPremium }: DayContentModalProps) {
-  const { user } = useAuth();
+export function DayContentModal({ open, onOpenChange, day }: DayContentModalProps) {
+  const { user, isPremiumUser } = useAuth();
   const { toast } = useToast();
   const [content, setContent] = useState<DayContent | null>(null);
   const [loading, setLoading] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [copiedField, setCopiedField] = useState<string | null>(null);
 
-  const isLocked = !isPremium && day && day.day > FREE_DAYS_LIMIT;
+  const isLocked = !isPremiumUser && day && day.day > FREE_DAYS_LIMIT;
 
   // Load existing content when modal opens
   useEffect(() => {

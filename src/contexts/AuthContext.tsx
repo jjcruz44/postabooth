@@ -2,10 +2,14 @@ import { createContext, useContext, useEffect, useState, ReactNode } from "react
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 
+// Owner email that gets automatic premium access
+const OWNER_PREMIUM_EMAIL = "johnson@clickself.com.br";
+
 interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
+  isPremiumUser: boolean;
   signUp: (email: string, password: string, fullName?: string) => Promise<{ error: Error | null }>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
@@ -68,8 +72,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await supabase.auth.signOut();
   };
 
+  // Check if user is premium: owner email OR future is_premium field
+  const isPremiumUser = Boolean(
+    user?.email?.toLowerCase() === OWNER_PREMIUM_EMAIL.toLowerCase()
+    // Add future checks here: || user?.user_metadata?.is_premium === true
+  );
+
   return (
-    <AuthContext.Provider value={{ user, session, loading, signUp, signIn, signOut }}>
+    <AuthContext.Provider value={{ user, session, loading, isPremiumUser, signUp, signIn, signOut }}>
       {children}
     </AuthContext.Provider>
   );
