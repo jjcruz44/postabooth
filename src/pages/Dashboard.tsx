@@ -1,24 +1,22 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { 
-  Calendar, FolderOpen, LayoutGrid, Settings, LogOut,
-  ChevronLeft, ChevronRight, Search, Sparkles, Loader2, CalendarDays
+  Settings, LogOut, ChevronLeft, ChevronRight, Search, 
+  Sparkles, Loader2, CalendarDays, Lightbulb
 } from "lucide-react";
 import { useNavigate, Link } from "react-router-dom";
 import postaboothLogo from "@/assets/postabooth-logo.png";
 import { useContentsDB, ContentItem } from "@/hooks/useContentsDB";
 import { useAuth } from "@/contexts/AuthContext";
 import { useProfile } from "@/hooks/useProfile";
-import { CalendarView } from "@/components/dashboard/CalendarView";
-import { ContentsView } from "@/components/dashboard/ContentsView";
 import { GeneratorView } from "@/components/dashboard/GeneratorView";
-import { LibraryView } from "@/components/dashboard/LibraryView";
 import { PlannerView } from "@/components/dashboard/PlannerView";
+import { SuggestionsView } from "@/components/dashboard/SuggestionsView";
 import { ContentDetailModal } from "@/components/dashboard/ContentDetailModal";
 import { useToast } from "@/hooks/use-toast";
 import { ContentSuggestion } from "@/hooks/useContentSuggestions";
 
-type ViewType = "planejamento" | "calendario" | "conteudos" | "biblioteca" | "gerador";
+type ViewType = "planejamento" | "gerador" | "sugestoes";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -33,11 +31,9 @@ const Dashboard = () => {
   const { contents, loading, addContent, updateStatus, deleteContent, stats } = useContentsDB();
 
   const navItems = [
-    { id: "planejamento" as const, label: "Planejamento", icon: CalendarDays },
-    { id: "calendario" as const, label: "Calendário", icon: Calendar },
-    { id: "conteudos" as const, label: "Conteúdos", icon: LayoutGrid },
-    { id: "gerador" as const, label: "Gerador", icon: Sparkles },
-    { id: "biblioteca" as const, label: "Biblioteca", icon: FolderOpen },
+    { id: "planejamento" as const, label: "Planejamento Mensal", icon: CalendarDays },
+    { id: "gerador" as const, label: "Gerador de Posts", icon: Sparkles },
+    { id: "sugestoes" as const, label: "Sugestões da IA", icon: Lightbulb },
   ];
 
   const handleSaveContent = async (content: {
@@ -183,23 +179,6 @@ const Dashboard = () => {
           {activeView === "planejamento" && (
             <PlannerView />
           )}
-          {activeView === "calendario" && (
-            <CalendarView
-              contents={contents}
-              stats={stats}
-              onNewContent={() => setActiveView("gerador")}
-              onSelectContent={setSelectedContent}
-            />
-          )}
-          {activeView === "conteudos" && (
-            <ContentsView
-              contents={contents}
-              onUpdateStatus={updateStatus}
-              onDelete={deleteContent}
-              onNewContent={() => setActiveView("gerador")}
-              onSelectContent={setSelectedContent}
-            />
-          )}
           {activeView === "gerador" && (
             <GeneratorView 
               onSaveContent={handleSaveContent} 
@@ -207,11 +186,8 @@ const Dashboard = () => {
               onSuggestionUsed={() => setSelectedSuggestion(null)}
             />
           )}
-          {activeView === "biblioteca" && (
-            <LibraryView 
-              contents={contents} 
-              onSelectContent={setSelectedContent}
-              onDeleteContent={deleteContent}
+          {activeView === "sugestoes" && (
+            <SuggestionsView 
               onUseSuggestion={(suggestion) => {
                 setSelectedSuggestion(suggestion);
                 setActiveView("gerador");
