@@ -2,7 +2,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { 
   Settings, LogOut, ChevronLeft, ChevronRight, Search, 
-  Sparkles, Loader2, CalendarDays, Lightbulb
+  Sparkles, Loader2, CalendarDays, Lightbulb, Calendar
 } from "lucide-react";
 import { useNavigate, Link } from "react-router-dom";
 import postaboothLogo from "@/assets/postabooth-logo.png";
@@ -12,11 +12,12 @@ import { useProfile } from "@/hooks/useProfile";
 import { GeneratorView } from "@/components/dashboard/GeneratorView";
 import { PlannerView } from "@/components/dashboard/PlannerView";
 import { SuggestionsView } from "@/components/dashboard/SuggestionsView";
+import { MyCalendarView } from "@/components/dashboard/MyCalendarView";
 import { ContentDetailModal } from "@/components/dashboard/ContentDetailModal";
 import { useToast } from "@/hooks/use-toast";
 import { ContentSuggestion } from "@/hooks/useContentSuggestions";
 
-type ViewType = "planejamento" | "gerador" | "sugestoes";
+type ViewType = "planejamento" | "gerador" | "sugestoes" | "meu-calendario";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -32,6 +33,7 @@ const Dashboard = () => {
 
   const navItems = [
     { id: "planejamento" as const, label: "Planejamento Mensal", icon: CalendarDays },
+    { id: "meu-calendario" as const, label: "Meu Calendário", icon: Calendar },
     { id: "gerador" as const, label: "Gerador de Posts", icon: Sparkles },
     { id: "sugestoes" as const, label: "Sugestões da IA", icon: Lightbulb },
   ];
@@ -178,6 +180,9 @@ const Dashboard = () => {
         <main className="flex-1 p-6 overflow-auto">
           {activeView === "planejamento" && (
             <PlannerView />
+          )}
+          {activeView === "meu-calendario" && (
+            <MyCalendarView />
           )}
           {activeView === "gerador" && (
             <GeneratorView 
