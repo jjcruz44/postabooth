@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useCalendarPlanner, CalendarDay } from "@/hooks/useCalendarPlanner";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 import { DayContentModal } from "./DayContentModal";
 
 const categoryConfig: Record<string, { icon: React.ElementType; color: string; label: string }> = {
@@ -28,10 +29,10 @@ const goalSuggestions = [
 ];
 
 const FREE_DAYS_LIMIT = 3;
-const IS_PREMIUM = false; // TODO: Replace with actual subscription check
 
 export function PlannerView() {
   const { calendar, monthlyGoal: savedGoal, loading, initialLoading, error, generateCalendar, clearCalendar } = useCalendarPlanner();
+  const { isPremiumUser } = useAuth();
   const { toast } = useToast();
   const [goalInput, setGoalInput] = useState("");
   const [selectedDay, setSelectedDay] = useState<CalendarDay | null>(null);
@@ -249,7 +250,7 @@ export function PlannerView() {
                 {calendar.map((day, index) => {
                   const config = categoryConfig[day.category] || categoryConfig["prova social"];
                   const Icon = config.icon;
-                  const isLocked = !IS_PREMIUM && day.day > FREE_DAYS_LIMIT;
+                  const isLocked = !isPremiumUser && day.day > FREE_DAYS_LIMIT;
                   
                   return (
                     <motion.div
@@ -302,7 +303,6 @@ export function PlannerView() {
         open={modalOpen}
         onOpenChange={setModalOpen}
         day={selectedDay}
-        isPremium={IS_PREMIUM}
       />
     </div>
   );
