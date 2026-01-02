@@ -93,20 +93,20 @@ export function PlannerView() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h2 className="text-2xl font-bold text-foreground flex items-center gap-2">
-            <CalendarDays className="w-7 h-7 text-primary" />
+          <h2 className="text-xl md:text-2xl font-bold text-foreground flex items-center gap-2">
+            <CalendarDays className="w-6 h-6 md:w-7 md:h-7 text-primary" />
             Planejamento Mensal
           </h2>
-          <p className="text-muted-foreground mt-1">
+          <p className="text-sm md:text-base text-muted-foreground mt-1">
             Gere um calendário estratégico de 30 dias para suas redes sociais
           </p>
         </div>
         {calendar.length > 0 && (
-          <Button variant="outline" onClick={handleNewCalendar} className="gap-2">
+          <Button variant="outline" onClick={handleNewCalendar} className="gap-2 w-full sm:w-auto">
             <RefreshCw className="w-4 h-4" />
             Novo planejamento
           </Button>
@@ -130,10 +130,10 @@ export function PlannerView() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
-            className="space-y-6"
+            className="space-y-4 md:space-y-6"
           >
             {/* Goal Input */}
-            <div className="bg-card rounded-xl border border-border p-6 space-y-4">
+            <div className="bg-card rounded-xl border border-border p-4 md:p-6 space-y-4">
               <div className="flex items-center gap-2 text-foreground font-medium">
                 <Target className="w-5 h-5 text-primary" />
                 Qual é o objetivo principal do mês?
@@ -143,7 +143,7 @@ export function PlannerView() {
                 value={goalInput}
                 onChange={(e) => setGoalInput(e.target.value)}
                 placeholder="Ex: Aumentar pedidos de orçamento para casamentos"
-                className="min-h-24 resize-none"
+                className="min-h-20 md:min-h-24 resize-none"
               />
 
               <div className="space-y-2">
@@ -153,7 +153,7 @@ export function PlannerView() {
                     <button
                       key={goal}
                       onClick={() => handleSelectGoal(goal)}
-                      className={`px-3 py-1.5 text-sm rounded-full border transition-all ${
+                      className={`px-3 py-1.5 text-xs md:text-sm rounded-full border transition-all ${
                         goalInput === goal
                           ? "bg-primary text-primary-foreground border-primary"
                           : "bg-muted/50 text-muted-foreground border-border hover:border-primary/50"
@@ -167,16 +167,16 @@ export function PlannerView() {
             </div>
 
             {/* Distribution Preview */}
-            <div className="bg-card rounded-xl border border-border p-6">
-              <h3 className="font-medium text-foreground mb-4">Distribuição do conteúdo</h3>
-              <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+            <div className="bg-card rounded-xl border border-border p-4 md:p-6">
+              <h3 className="font-medium text-foreground mb-3 md:mb-4 text-sm md:text-base">Distribuição do conteúdo</h3>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 md:gap-3">
                 {Object.entries(categoryConfig).map(([key, config]) => {
                   const Icon = config.icon;
                   const percentage = key === "prova social" ? 30 : key === "educativo" ? 20 : key === "oferta" ? 20 : 15;
                   return (
-                    <div key={key} className={`p-3 rounded-lg border ${config.color}`}>
-                      <Icon className="w-5 h-5 mb-2" />
-                      <div className="text-sm font-medium">{config.label}</div>
+                    <div key={key} className={`p-2.5 md:p-3 rounded-lg border ${config.color}`}>
+                      <Icon className="w-4 h-4 md:w-5 md:h-5 mb-1.5 md:mb-2" />
+                      <div className="text-xs md:text-sm font-medium">{config.label}</div>
                       <div className="text-xs opacity-70">{percentage}%</div>
                     </div>
                   );
@@ -189,7 +189,7 @@ export function PlannerView() {
               size="lg"
               onClick={handleGenerate}
               disabled={loading || !goalInput.trim()}
-              className="w-full gap-2 h-14 text-lg"
+              className="w-full gap-2 h-12 md:h-14 text-base md:text-lg"
             >
               {loading ? (
                 <>
@@ -205,7 +205,7 @@ export function PlannerView() {
             </Button>
 
             {error && (
-              <div className="p-4 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-sm">
+              <div className="p-3 md:p-4 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-sm">
                 {error}
               </div>
             )}
@@ -215,20 +215,20 @@ export function PlannerView() {
             key="calendar"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="space-y-6"
+            className="space-y-4 md:space-y-6"
           >
             {/* Stats */}
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 md:gap-3">
               {Object.entries(getCategoryStats()).map(([category, count]) => {
                 const config = categoryConfig[category] || categoryConfig["prova social"];
                 const Icon = config.icon;
                 return (
-                  <div key={category} className={`p-3 rounded-lg border ${config.color}`}>
-                    <div className="flex items-center gap-2">
-                      <Icon className="w-4 h-4" />
-                      <span className="text-sm font-medium">{config.label}</span>
+                  <div key={category} className={`p-2.5 md:p-3 rounded-lg border ${config.color}`}>
+                    <div className="flex items-center gap-1.5 md:gap-2">
+                      <Icon className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                      <span className="text-xs md:text-sm font-medium truncate">{config.label}</span>
                     </div>
-                    <div className="text-2xl font-bold mt-1">{count}</div>
+                    <div className="text-xl md:text-2xl font-bold mt-1">{count}</div>
                   </div>
                 );
               })}
@@ -236,17 +236,17 @@ export function PlannerView() {
 
             {/* Calendar Grid */}
             <div className="bg-card rounded-xl border border-border overflow-hidden">
-              <div className="p-4 border-b border-border bg-muted/30">
-                <div className="flex items-center gap-2 text-foreground font-medium">
-                  <CheckCircle2 className="w-5 h-5 text-success" />
+              <div className="p-3 md:p-4 border-b border-border bg-muted/30">
+                <div className="flex items-center gap-2 text-foreground font-medium text-sm md:text-base">
+                  <CheckCircle2 className="w-4 h-4 md:w-5 md:h-5 text-success" />
                   Calendário gerado com sucesso
                 </div>
-                <p className="text-sm text-muted-foreground mt-1">
+                <p className="text-xs md:text-sm text-muted-foreground mt-1 line-clamp-2">
                   Objetivo: {savedGoal}
                 </p>
               </div>
 
-              <div className="divide-y divide-border max-h-[600px] overflow-y-auto">
+              <div className="divide-y divide-border max-h-[450px] md:max-h-[600px] overflow-y-auto">
                 {calendar.map((day, index) => {
                   const config = categoryConfig[day.category] || categoryConfig["prova social"];
                   const Icon = config.icon;
@@ -259,32 +259,32 @@ export function PlannerView() {
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: index * 0.02 }}
                       onClick={() => handleDayClick(day)}
-                      className={`p-4 transition-colors cursor-pointer ${
+                      className={`p-3 md:p-4 transition-colors cursor-pointer ${
                         isLocked 
                           ? "hover:bg-muted/20 opacity-60" 
                           : "hover:bg-muted/30"
                       }`}
                     >
-                      <div className="flex items-start gap-4">
-                        <div className={`w-12 h-12 rounded-lg flex items-center justify-center font-bold text-lg shrink-0 ${
+                      <div className="flex items-start gap-3 md:gap-4">
+                        <div className={`w-10 h-10 md:w-12 md:h-12 rounded-lg flex items-center justify-center font-bold text-base md:text-lg shrink-0 ${
                           isLocked 
                             ? "bg-muted text-muted-foreground" 
                             : "gradient-primary text-primary-foreground"
                         }`}>
-                          {isLocked ? <Lock className="w-5 h-5" /> : day.day}
+                          {isLocked ? <Lock className="w-4 h-4 md:w-5 md:h-5" /> : day.day}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
+                          <div className="flex items-center gap-2 mb-1 flex-wrap">
                             <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border ${config.color}`}>
                               <Icon className="w-3 h-3" />
-                              {config.label}
+                              <span className="hidden sm:inline">{config.label}</span>
                             </span>
                             {isLocked && (
                               <span className="text-xs text-warning font-medium">Premium</span>
                             )}
                           </div>
-                          <p className="text-foreground font-medium">{day.idea}</p>
-                          <p className="text-sm text-muted-foreground mt-1">
+                          <p className="text-foreground font-medium text-sm md:text-base line-clamp-2">{day.idea}</p>
+                          <p className="text-xs md:text-sm text-muted-foreground mt-1 line-clamp-1">
                             {day.objective}
                           </p>
                         </div>

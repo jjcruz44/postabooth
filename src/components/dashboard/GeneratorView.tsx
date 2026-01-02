@@ -273,46 +273,46 @@ export function GeneratorView({ onSaveContent, initialSuggestion, onSuggestionUs
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8">
+    <div className="max-w-4xl mx-auto space-y-6 md:space-y-8">
       <div className="text-center">
-        <div className="w-16 h-16 rounded-2xl gradient-primary flex items-center justify-center mx-auto mb-4">
-          <Sparkles className="w-8 h-8 text-primary-foreground" />
+        <div className="w-14 h-14 md:w-16 md:h-16 rounded-2xl gradient-primary flex items-center justify-center mx-auto mb-3 md:mb-4">
+          <Sparkles className="w-7 h-7 md:w-8 md:h-8 text-primary-foreground" />
         </div>
-        <h2 className="text-2xl font-bold text-foreground mb-2">
+        <h2 className="text-xl md:text-2xl font-bold text-foreground mb-2">
           Gerador de Conteúdo com IA
         </h2>
-        <p className="text-muted-foreground">
+        <p className="text-sm md:text-base text-muted-foreground">
           Crie roteiros, legendas e hashtags em segundos
         </p>
       </div>
 
-      <div className="grid lg:grid-cols-2 gap-6">
+      <div className="grid lg:grid-cols-2 gap-4 md:gap-6">
         {/* Form */}
-        <div className="bg-card rounded-xl p-6 border border-border space-y-6">
+        <div className="bg-card rounded-xl p-4 md:p-6 border border-border space-y-5 md:space-y-6">
           <div>
-            <label className="block text-sm font-medium text-foreground mb-3">
+            <label className="block text-sm font-medium text-foreground mb-2 md:mb-3">
               Tipo de conteúdo
             </label>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-3 gap-2 md:gap-3">
               {contentTypes.map((type) => (
                 <button
                   key={type.id}
                   onClick={() => setSelectedContentType(type.id)}
-                  className={`p-4 rounded-xl border-2 transition-all text-center ${
+                  className={`p-3 md:p-4 rounded-xl border-2 transition-all text-center ${
                     selectedContentType === type.id
                       ? "border-primary bg-primary/5"
                       : "border-border hover:border-primary/30"
                   }`}
                 >
                   <type.icon
-                    className={`w-6 h-6 mx-auto mb-2 ${
+                    className={`w-5 h-5 md:w-6 md:h-6 mx-auto mb-1.5 md:mb-2 ${
                       selectedContentType === type.id
                         ? "text-primary"
                         : "text-muted-foreground"
                     }`}
                   />
                   <span
-                    className={`text-sm font-medium ${
+                    className={`text-xs md:text-sm font-medium ${
                       selectedContentType === type.id
                         ? "text-primary"
                         : "text-foreground"
@@ -332,7 +332,7 @@ export function GeneratorView({ onSaveContent, initialSuggestion, onSuggestionUs
             <select
               value={selectedEventType}
               onChange={(e) => setSelectedEventType(e.target.value)}
-              className="w-full px-4 py-3 rounded-xl border border-border bg-background text-foreground focus:outline-none focus:border-primary"
+              className="w-full px-3 md:px-4 py-2.5 md:py-3 rounded-xl border border-border bg-background text-foreground text-sm md:text-base focus:outline-none focus:border-primary"
             >
               {eventTypes.map((event) => (
                 <option key={event} value={event}>
@@ -343,15 +343,15 @@ export function GeneratorView({ onSaveContent, initialSuggestion, onSuggestionUs
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-foreground mb-3">
+            <label className="block text-sm font-medium text-foreground mb-2 md:mb-3">
               Objetivo do post
             </label>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-2 md:gap-3">
               {objectives.map((obj) => (
                 <button
                   key={obj}
                   onClick={() => setSelectedObjective(obj)}
-                  className={`p-3 rounded-xl border-2 transition-all text-sm font-medium ${
+                  className={`p-2.5 md:p-3 rounded-xl border-2 transition-all text-xs md:text-sm font-medium ${
                     selectedObjective === obj
                       ? "border-primary bg-primary/5 text-primary"
                       : "border-border hover:border-primary/30 text-foreground"
@@ -372,7 +372,7 @@ export function GeneratorView({ onSaveContent, initialSuggestion, onSuggestionUs
               value={mainIdea}
               onChange={(e) => setMainIdea(e.target.value)}
               placeholder="Descreva a ideia central ou mensagem que você quer comunicar nesse post..."
-              className="w-full px-4 py-3 rounded-xl border border-border bg-background text-foreground focus:outline-none focus:border-primary resize-none min-h-[100px]"
+              className="w-full px-3 md:px-4 py-2.5 md:py-3 rounded-xl border border-border bg-background text-foreground text-sm md:text-base focus:outline-none focus:border-primary resize-none min-h-[80px] md:min-h-[100px]"
               rows={3}
             />
             <p className="text-xs text-muted-foreground mt-1">
@@ -465,12 +465,12 @@ export function GeneratorView({ onSaveContent, initialSuggestion, onSuggestionUs
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="bg-card rounded-xl p-6 border border-border flex items-center justify-center min-h-[400px]"
+              className="bg-card rounded-xl p-4 md:p-6 border border-border flex items-center justify-center min-h-[300px] md:min-h-[400px]"
             >
               <div className="text-center">
-                <Loader2 className="w-12 h-12 text-primary animate-spin mx-auto mb-4" />
-                <p className="text-muted-foreground">Gerando conteúdo com IA...</p>
-                <p className="text-sm text-muted-foreground mt-1">
+                <Loader2 className="w-10 h-10 md:w-12 md:h-12 text-primary animate-spin mx-auto mb-3 md:mb-4" />
+                <p className="text-sm md:text-base text-muted-foreground">Gerando conteúdo com IA...</p>
+                <p className="text-xs md:text-sm text-muted-foreground mt-1">
                   Isso pode levar alguns segundos
                 </p>
               </div>
@@ -484,15 +484,15 @@ export function GeneratorView({ onSaveContent, initialSuggestion, onSuggestionUs
               className="bg-card rounded-xl border border-border overflow-hidden"
             >
               {/* Header */}
-              <div className="p-4 border-b border-border flex items-center justify-between bg-muted/30">
-                <div className="flex items-center gap-2">
-                  <Sparkles className="w-5 h-5 text-primary" />
-                  <span className="font-semibold text-foreground">Conteúdo Gerado</span>
+              <div className="p-3 md:p-4 border-b border-border flex items-center justify-between bg-muted/30 gap-2">
+                <div className="flex items-center gap-2 min-w-0">
+                  <Sparkles className="w-4 h-4 md:w-5 md:h-5 text-primary shrink-0" />
+                  <span className="font-semibold text-foreground text-sm md:text-base truncate">Conteúdo Gerado</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Button variant="outline" size="sm" onClick={handleSave} className="gap-1">
-                    <Save className="w-4 h-4" />
-                    Salvar
+                <div className="flex items-center gap-1 md:gap-2 shrink-0">
+                  <Button variant="outline" size="sm" onClick={handleSave} className="gap-1 h-8 md:h-9 text-xs md:text-sm">
+                    <Save className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                    <span className="hidden sm:inline">Salvar</span>
                   </Button>
                   <button
                     onClick={() => setGeneratedContent(null)}
@@ -504,7 +504,7 @@ export function GeneratorView({ onSaveContent, initialSuggestion, onSuggestionUs
               </div>
 
               {/* Content */}
-              <div className="p-4 space-y-4 max-h-[500px] overflow-y-auto">
+              <div className="p-3 md:p-4 space-y-3 md:space-y-4 max-h-[400px] md:max-h-[500px] overflow-y-auto">
                 {/* Title */}
                 <ContentSection
                   label="Título"
@@ -572,11 +572,11 @@ export function GeneratorView({ onSaveContent, initialSuggestion, onSuggestionUs
                       )}
                     </button>
                   </div>
-                  <div className="flex flex-wrap gap-2">
+                  <div className="flex flex-wrap gap-1.5 md:gap-2">
                     {generatedContent.hashtags.map((tag, i) => (
                       <span
                         key={i}
-                        className="px-2 py-1 bg-primary/10 text-primary text-xs rounded-full font-medium"
+                        className="px-2 py-0.5 md:py-1 bg-primary/10 text-primary text-xs rounded-full font-medium"
                       >
                         #{tag}
                       </span>
@@ -591,14 +591,14 @@ export function GeneratorView({ onSaveContent, initialSuggestion, onSuggestionUs
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="bg-muted/30 rounded-xl p-6 border border-dashed border-border flex items-center justify-center min-h-[400px]"
+              className="bg-muted/30 rounded-xl p-4 md:p-6 border border-dashed border-border flex items-center justify-center min-h-[250px] md:min-h-[400px]"
             >
               <div className="text-center">
-                <Lightbulb className="w-12 h-12 text-muted-foreground/50 mx-auto mb-4" />
-                <p className="text-muted-foreground">
+                <Lightbulb className="w-10 h-10 md:w-12 md:h-12 text-muted-foreground/50 mx-auto mb-3 md:mb-4" />
+                <p className="text-sm md:text-base text-muted-foreground">
                   Selecione as opções e clique em gerar
                 </p>
-                <p className="text-sm text-muted-foreground mt-1">
+                <p className="text-xs md:text-sm text-muted-foreground mt-1">
                   O conteúdo aparecerá aqui
                 </p>
               </div>

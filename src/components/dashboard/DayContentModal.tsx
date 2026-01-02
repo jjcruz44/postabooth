@@ -189,22 +189,22 @@ export function DayContentModal({ open, onOpenChange, day }: DayContentModalProp
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[85vh] overflow-hidden flex flex-col">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg gradient-primary flex items-center justify-center text-primary-foreground font-bold">
+      <DialogContent className="max-w-[95vw] sm:max-w-2xl max-h-[85vh] overflow-hidden flex flex-col p-0">
+        <DialogHeader className="p-3 md:p-4 border-b border-border">
+          <DialogTitle className="flex items-center gap-2 md:gap-3">
+            <div className="w-9 h-9 md:w-10 md:h-10 rounded-lg gradient-primary flex items-center justify-center text-primary-foreground font-bold text-sm md:text-base shrink-0">
               {day.day}
             </div>
-            <div>
-              <span className="text-lg">{day.idea}</span>
-              <p className="text-sm text-muted-foreground font-normal">
+            <div className="min-w-0">
+              <span className="text-base md:text-lg line-clamp-1">{day.idea}</span>
+              <p className="text-xs md:text-sm text-muted-foreground font-normal line-clamp-1">
                 {day.category} • {day.objective}
               </p>
             </div>
           </DialogTitle>
         </DialogHeader>
 
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto p-3 md:p-4">
           <AnimatePresence mode="wait">
             {isLocked ? (
               <motion.div
@@ -212,19 +212,19 @@ export function DayContentModal({ open, onOpenChange, day }: DayContentModalProp
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.95 }}
-                className="flex flex-col items-center justify-center py-12 text-center"
+                className="flex flex-col items-center justify-center py-8 md:py-12 text-center"
               >
-                <div className="w-20 h-20 rounded-full bg-warning/10 flex items-center justify-center mb-4">
-                  <Lock className="w-10 h-10 text-warning" />
+                <div className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-warning/10 flex items-center justify-center mb-3 md:mb-4">
+                  <Lock className="w-8 h-8 md:w-10 md:h-10 text-warning" />
                 </div>
-                <h3 className="text-xl font-bold text-foreground mb-2">
+                <h3 className="text-lg md:text-xl font-bold text-foreground mb-2">
                   Conteúdo Premium
                 </h3>
-                <p className="text-muted-foreground max-w-sm mb-6">
+                <p className="text-sm md:text-base text-muted-foreground max-w-sm mb-4 md:mb-6 px-4">
                   No plano gratuito, você tem acesso aos primeiros 3 dias do calendário. 
                   Faça upgrade para desbloquear todos os 30 dias.
                 </p>
-                <Button className="gap-2">
+                <Button className="gap-2 h-10 md:h-11">
                   <Crown className="w-4 h-4" />
                   Fazer upgrade
                 </Button>
@@ -235,10 +235,10 @@ export function DayContentModal({ open, onOpenChange, day }: DayContentModalProp
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="flex flex-col items-center justify-center py-12"
+                className="flex flex-col items-center justify-center py-8 md:py-12"
               >
-                <Loader2 className="w-10 h-10 animate-spin text-primary mb-4" />
-                <p className="text-muted-foreground">
+                <Loader2 className="w-8 h-8 md:w-10 md:h-10 animate-spin text-primary mb-3 md:mb-4" />
+                <p className="text-sm md:text-base text-muted-foreground">
                   {generating ? "Gerando conteúdo com IA..." : "Carregando..."}
                 </p>
               </motion.div>
@@ -247,7 +247,7 @@ export function DayContentModal({ open, onOpenChange, day }: DayContentModalProp
                 key="content"
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="space-y-4 py-2"
+                className="space-y-3 md:space-y-4"
               >
                 {/* Legenda */}
                 <ContentSection
@@ -283,7 +283,7 @@ export function DayContentModal({ open, onOpenChange, day }: DayContentModalProp
                 {content.hashtags && content.hashtags.length > 0 && (
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
-                      <h4 className="text-sm font-medium text-foreground">Hashtags</h4>
+                      <h4 className="text-xs md:text-sm font-medium text-foreground">Hashtags</h4>
                       <Button
                         variant="ghost"
                         size="sm"
@@ -302,7 +302,7 @@ export function DayContentModal({ open, onOpenChange, day }: DayContentModalProp
                       {content.hashtags.map((tag, i) => (
                         <span
                           key={i}
-                          className="px-2 py-1 text-xs rounded-full bg-primary/10 text-primary border border-primary/20"
+                          className="px-2 py-0.5 md:py-1 text-xs rounded-full bg-primary/10 text-primary border border-primary/20"
                         >
                           #{tag.replace(/^#/, "")}
                         </span>
@@ -312,12 +312,12 @@ export function DayContentModal({ open, onOpenChange, day }: DayContentModalProp
                 )}
 
                 {/* Actions */}
-                <div className="flex gap-2 pt-4 border-t border-border">
+                <div className="flex flex-col sm:flex-row gap-2 pt-3 md:pt-4 border-t border-border">
                   <Button
                     variant="outline"
                     onClick={handleRegenerate}
                     disabled={generating}
-                    className="gap-2"
+                    className="gap-2 h-10"
                   >
                     <RefreshCw className={`w-4 h-4 ${generating ? "animate-spin" : ""}`} />
                     Regenerar
@@ -352,9 +352,9 @@ function ContentSection({
     : "bg-card";
 
   return (
-    <div className={`p-4 rounded-lg border border-border ${bgClass}`}>
+    <div className={`p-3 md:p-4 rounded-lg border border-border ${bgClass}`}>
       <div className="flex items-center justify-between mb-2">
-        <h4 className="text-sm font-medium text-foreground">{title}</h4>
+        <h4 className="text-xs md:text-sm font-medium text-foreground">{title}</h4>
         <Button
           variant="ghost"
           size="sm"
@@ -369,7 +369,7 @@ function ContentSection({
           Copiar
         </Button>
       </div>
-      <p className="text-sm text-muted-foreground whitespace-pre-wrap">{content}</p>
+      <p className="text-xs md:text-sm text-muted-foreground whitespace-pre-wrap break-words">{content}</p>
     </div>
   );
 }

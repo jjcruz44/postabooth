@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { 
   Settings, LogOut, ChevronLeft, ChevronRight, Search, 
-  Sparkles, Loader2, CalendarDays, Lightbulb, Calendar
+  Sparkles, Loader2, CalendarDays, Lightbulb, Calendar,
+  Menu, X
 } from "lucide-react";
 import { useNavigate, Link } from "react-router-dom";
 import postaboothLogo from "@/assets/postabooth-logo.png";
@@ -16,6 +17,9 @@ import { MyCalendarView } from "@/components/dashboard/MyCalendarView";
 import { ContentDetailModal } from "@/components/dashboard/ContentDetailModal";
 import { useToast } from "@/hooks/use-toast";
 import { ContentSuggestion } from "@/hooks/useContentSuggestions";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Button } from "@/components/ui/button";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 type ViewType = "planejamento" | "gerador" | "sugestoes" | "meu-calendario";
 
@@ -24,8 +28,10 @@ const Dashboard = () => {
   const { user, signOut } = useAuth();
   const { profile } = useProfile();
   const { toast } = useToast();
+  const isMobile = useIsMobile();
   const [activeView, setActiveView] = useState<ViewType>("planejamento");
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [selectedContent, setSelectedContent] = useState<ContentItem | null>(null);
   const [selectedSuggestion, setSelectedSuggestion] = useState<ContentSuggestion | null>(null);
   
@@ -72,6 +78,13 @@ const Dashboard = () => {
     navigate("/");
   };
 
+  const handleNavClick = (viewId: ViewType) => {
+    setActiveView(viewId);
+    if (isMobile) {
+      setMobileMenuOpen(false);
+    }
+  };
+
   const userInitials = user?.email?.slice(0, 2).toUpperCase() || "U";
 
   if (loading) {
@@ -85,77 +98,161 @@ const Dashboard = () => {
     );
   }
 
-  return (
-    <div className="min-h-screen bg-background flex">
-      {/* Sidebar */}
-      <motion.aside
-        initial={false}
-        animate={{ width: sidebarOpen ? 240 : 72 }}
-        className="bg-sidebar border-r border-sidebar-border flex flex-col shrink-0 relative"
+  // Sidebar content component for reuse
+  const SidebarContent = ({ isSheet = false }: { isSheet?: boolean }) => (
+    <>
+      <Link 
+        to="/" 
+        className="h-16 flex items-center gap-3 px-4 border-b border-sidebar-border hover:bg-sidebar-accent/30 transition-colors"
+        onClick={() => isSheet && setMobileMenuOpen(false)}
       >
-        <Link to="/" className="h-16 flex items-center gap-3 px-4 border-b border-sidebar-border hover:bg-sidebar-accent/30 transition-colors">
-          <img 
-            src={postaboothLogo} 
-            alt="PostaBooth" 
-            className="w-9 h-9 rounded-xl object-contain shrink-0"
-          />
-          {sidebarOpen && (
-            <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="font-bold text-lg text-sidebar-foreground">
-              PostaBooth
-            </motion.span>
-          )}
-        </Link>
+        <img 
+          src={postaboothLogo} 
+          alt="PostaBooth" 
+          className="w-9 h-9 rounded-xl object-contain shrink-0"
+        />
+        <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="font-bold text-lg text-sidebar-foreground">
+          PostaBooth
+        </motion.span>
+      </Link>
 
-        <nav className="flex-1 p-3 space-y-1">
-          {navItems.map((item) => (
-            <button
-              key={item.id}
-              onClick={() => setActiveView(item.id)}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all ${
-                activeView === item.id
-                  ? "bg-sidebar-accent text-sidebar-primary font-medium"
-                  : "text-sidebar-foreground hover:bg-sidebar-accent/50"
-              }`}
-            >
-              <item.icon className="w-5 h-5 shrink-0" />
-              {sidebarOpen && <span className="text-sm">{item.label}</span>}
-            </button>
-          ))}
-        </nav>
-
-        <div className="p-3 border-t border-sidebar-border space-y-1">
-          <button 
-            onClick={() => navigate("/settings")}
-            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sidebar-foreground hover:bg-sidebar-accent/50 transition-all"
+      <nav className="flex-1 p-3 space-y-1">
+        {navItems.map((item) => (
+          <button
+            key={item.id}
+            onClick={() => handleNavClick(item.id)}
+            className={`w-full flex items-center gap-3 px-3 py-3 md:py-2.5 rounded-lg transition-all ${
+              activeView === item.id
+                ? "bg-sidebar-accent text-sidebar-primary font-medium"
+                : "text-sidebar-foreground hover:bg-sidebar-accent/50"
+            }`}
           >
-            <Settings className="w-5 h-5 shrink-0" />
-            {sidebarOpen && <span className="text-sm">Configurações</span>}
+            <item.icon className="w-5 h-5 shrink-0" />
+            <span className="text-sm">{item.label}</span>
           </button>
-          <button 
-            onClick={handleLogout}
-            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sidebar-foreground hover:bg-sidebar-accent/50 transition-all"
-          >
-            <LogOut className="w-5 h-5 shrink-0" />
-            {sidebarOpen && <span className="text-sm">Sair</span>}
-          </button>
-        </div>
+        ))}
+      </nav>
 
-        <button
-          onClick={() => setSidebarOpen(!sidebarOpen)}
-          className="absolute top-20 -right-3 w-6 h-6 rounded-full bg-card border border-border flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors z-10"
+      <div className="p-3 border-t border-sidebar-border space-y-1">
+        <button 
+          onClick={() => {
+            navigate("/settings");
+            if (isSheet) setMobileMenuOpen(false);
+          }}
+          className="w-full flex items-center gap-3 px-3 py-3 md:py-2.5 rounded-lg text-sidebar-foreground hover:bg-sidebar-accent/50 transition-all"
         >
-          {sidebarOpen ? <ChevronLeft className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+          <Settings className="w-5 h-5 shrink-0" />
+          <span className="text-sm">Configurações</span>
         </button>
-      </motion.aside>
+        <button 
+          onClick={handleLogout}
+          className="w-full flex items-center gap-3 px-3 py-3 md:py-2.5 rounded-lg text-sidebar-foreground hover:bg-sidebar-accent/50 transition-all"
+        >
+          <LogOut className="w-5 h-5 shrink-0" />
+          <span className="text-sm">Sair</span>
+        </button>
+      </div>
+    </>
+  );
+
+  return (
+    <div className="min-h-screen bg-background flex w-full">
+      {/* Mobile Sidebar (Drawer) */}
+      {isMobile && (
+        <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+          <SheetContent side="left" className="w-[280px] p-0 bg-sidebar border-r border-sidebar-border">
+            <div className="flex flex-col h-full">
+              <SidebarContent isSheet />
+            </div>
+          </SheetContent>
+        </Sheet>
+      )}
+
+      {/* Desktop Sidebar */}
+      {!isMobile && (
+        <motion.aside
+          initial={false}
+          animate={{ width: sidebarOpen ? 240 : 72 }}
+          className="bg-sidebar border-r border-sidebar-border flex flex-col shrink-0 relative"
+        >
+          <Link to="/" className="h-16 flex items-center gap-3 px-4 border-b border-sidebar-border hover:bg-sidebar-accent/30 transition-colors">
+            <img 
+              src={postaboothLogo} 
+              alt="PostaBooth" 
+              className="w-9 h-9 rounded-xl object-contain shrink-0"
+            />
+            {sidebarOpen && (
+              <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="font-bold text-lg text-sidebar-foreground">
+                PostaBooth
+              </motion.span>
+            )}
+          </Link>
+
+          <nav className="flex-1 p-3 space-y-1">
+            {navItems.map((item) => (
+              <button
+                key={item.id}
+                onClick={() => setActiveView(item.id)}
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all ${
+                  activeView === item.id
+                    ? "bg-sidebar-accent text-sidebar-primary font-medium"
+                    : "text-sidebar-foreground hover:bg-sidebar-accent/50"
+                }`}
+              >
+                <item.icon className="w-5 h-5 shrink-0" />
+                {sidebarOpen && <span className="text-sm">{item.label}</span>}
+              </button>
+            ))}
+          </nav>
+
+          <div className="p-3 border-t border-sidebar-border space-y-1">
+            <button 
+              onClick={() => navigate("/settings")}
+              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sidebar-foreground hover:bg-sidebar-accent/50 transition-all"
+            >
+              <Settings className="w-5 h-5 shrink-0" />
+              {sidebarOpen && <span className="text-sm">Configurações</span>}
+            </button>
+            <button 
+              onClick={handleLogout}
+              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sidebar-foreground hover:bg-sidebar-accent/50 transition-all"
+            >
+              <LogOut className="w-5 h-5 shrink-0" />
+              {sidebarOpen && <span className="text-sm">Sair</span>}
+            </button>
+          </div>
+
+          <button
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            className="absolute top-20 -right-3 w-6 h-6 rounded-full bg-card border border-border flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors z-10"
+          >
+            {sidebarOpen ? <ChevronLeft className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+          </button>
+        </motion.aside>
+      )}
 
       {/* Main content */}
-      <div className="flex-1 flex flex-col min-h-screen">
-        <header className="h-16 border-b border-border bg-card flex items-center justify-between px-6">
-          <h1 className="text-xl font-semibold text-foreground">
+      <div className="flex-1 flex flex-col min-h-screen min-w-0">
+        <header className="h-14 md:h-16 border-b border-border bg-card flex items-center justify-between px-3 md:px-6 gap-3">
+          {/* Mobile menu button */}
+          {isMobile && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setMobileMenuOpen(true)}
+              className="shrink-0"
+            >
+              <Menu className="w-5 h-5" />
+            </Button>
+          )}
+          
+          <h1 className="text-base md:text-xl font-semibold text-foreground truncate">
             {navItems.find(n => n.id === activeView)?.label}
           </h1>
-          <div className="flex items-center gap-3">
-            <div className="relative">
+          
+          <div className="flex items-center gap-2 md:gap-3 shrink-0">
+            {/* Search - hide on mobile */}
+            <div className="relative hidden md:block">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <input
                 type="text"
@@ -167,17 +264,17 @@ const Dashboard = () => {
               <img 
                 src={profile.logoUrl} 
                 alt="Logo da empresa" 
-                className="w-9 h-9 rounded-full object-cover border border-border"
+                className="w-8 h-8 md:w-9 md:h-9 rounded-full object-cover border border-border"
               />
             ) : (
-              <div className="w-9 h-9 rounded-full gradient-primary flex items-center justify-center text-primary-foreground font-bold text-sm">
+              <div className="w-8 h-8 md:w-9 md:h-9 rounded-full gradient-primary flex items-center justify-center text-primary-foreground font-bold text-xs md:text-sm">
                 {userInitials}
               </div>
             )}
           </div>
         </header>
 
-        <main className="flex-1 p-6 overflow-auto">
+        <main className="flex-1 p-3 md:p-6 overflow-auto">
           {activeView === "planejamento" && (
             <PlannerView />
           )}
