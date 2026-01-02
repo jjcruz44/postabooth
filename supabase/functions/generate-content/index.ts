@@ -85,21 +85,20 @@ serve(async (req) => {
       throw new Error('LOVABLE_API_KEY is not configured');
     }
 
-    // Professional social media copywriter prompt
-    const systemPrompt = `Você é um copywriter profissional de redes sociais especializado em pequenos negócios que alugam cabines fotográficas, totens e plataformas 360 para eventos.
+    // Professional social media copywriter prompt - SHORT and ready-to-post
+    const systemPrompt = `Você é um copywriter de redes sociais especializado em pequenos negócios de eventos (cabines fotográficas, totens, plataformas 360).
 
-Crie um post completo para Instagram baseado nas informações fornecidas.
+Crie conteúdo CURTO e PRONTO PARA POSTAR no Instagram.
 
-Requisitos:
-1) Escreva uma legenda envolvente para Instagram (curta a média).
-2) Escreva um texto complementar sugerido (mais explicativo, opcional).
-3) Gere 12-18 hashtags com foco local + nicho (eventos + cidade).
-4) Adicione UM CTA claro no final da legenda, alinhado ao objetivo:
-   - orçamentos → peça data + cidade no DM/WhatsApp
-   - preencher datas vazias → urgência + vagas limitadas
-   - aumentar seguidores → comentar/salvar/compartilhar
-   - reativar contatos → responda no WhatsApp/DM
-5) Evite afirmações genéricas ("melhor", "número um") e evite emojis excessivamente repetitivos.`;
+REGRAS (MUITO IMPORTANTE):
+1) A legenda PRINCIPAL deve ser CURTA e fácil de postar:
+   - 3 a 5 linhas curtas
+   - Máximo 450 caracteres
+   - Linguagem simples
+2) Adicione UM CTA claro no final, alinhado ao objetivo.
+3) Crie um texto expandido OPCIONAL (para quem quiser mais).
+4) Gere apenas 8-12 hashtags relevantes.
+5) Evite explicações, tom didático ou parágrafos longos.`;
 
     // Build user prompt with all context
     let userPrompt = `Negócio:
@@ -109,7 +108,6 @@ Requisitos:
 - Tom: ${brandStyle || 'Profissional e acessível'}
 
 Dia do calendário:
-- Tipo de conteúdo: ${contentType.toUpperCase()}
 - Categoria do conteúdo: ${eventType}
 - Objetivo do post: ${objective}
 ${mainIdea ? `- Ideia do conteúdo: ${mainIdea}` : ''}
@@ -118,15 +116,15 @@ VOCÊ DEVE RETORNAR UM JSON COM EXATAMENTE ESTA ESTRUTURA:
 
 {
   "titulo": "Título atrativo do post (máximo 60 caracteres)",
-  "ideia": "Descrição breve da ideia central do conteúdo (1-2 frases)",
-  "roteiro": ${contentType === 'reels' ? '"Roteiro detalhado para o Reels com:\\n- Hook inicial (primeiros 3 segundos)\\n- Desenvolvimento (pontos principais)\\n- CTA final\\nIncluir sugestões de transições e textos na tela"' : contentType === 'carrossel' ? '"Array com 5-7 slides, cada um contendo:\\n- Número do slide\\n- Título do slide\\n- Conteúdo/texto do slide\\n- Sugestão visual"' : '"Sequência de 3-5 stories com:\\n- Conteúdo de cada story\\n- Elemento interativo sugerido (enquete, quiz, etc)"'},
-  "legenda": "Legenda persuasiva curta a média com gancho inicial, desenvolvimento e CTA alinhado ao objetivo",
-  "textoSugerido": "Texto complementar mais explicativo (opcional, para usar em outras plataformas)",
-  "cta": "Chamada para ação principal alinhada ao objetivo",
-  "hashtags": ["array", "de", "12", "a", "18", "hashtags", "com", "foco", "local", "e", "nicho"]
+  "ideia": "Descrição breve da ideia central (1 frase)",
+  "roteiro": ${contentType === 'reels' ? '"Roteiro curto para Reels:\\n- Hook (3 seg)\\n- Desenvolvimento\\n- CTA final"' : contentType === 'carrossel' ? '"Array com 5-7 slides curtos"' : '"Sequência de 3-5 stories"'},
+  "legenda": "Legenda CURTA (3-5 linhas, max 450 chars) com gancho + CTA",
+  "textoSugerido": "Texto expandido opcional (para quem quiser mais detalhes)",
+  "cta": "Chamada para ação principal",
+  "hashtags": ["8", "a", "12", "hashtags", "relevantes"]
 }
 
-Retorne APENAS o JSON, sem markdown ou explicações adicionais.`;
+Retorne APENAS o JSON, sem markdown.`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
