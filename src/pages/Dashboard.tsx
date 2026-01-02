@@ -2,7 +2,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { 
   Calendar, FolderOpen, LayoutGrid, Settings, LogOut,
-  ChevronLeft, ChevronRight, Search, Sparkles, Loader2
+  ChevronLeft, ChevronRight, Search, Sparkles, Loader2, CalendarDays
 } from "lucide-react";
 import { useNavigate, Link } from "react-router-dom";
 import postaboothLogo from "@/assets/postabooth-logo.png";
@@ -13,18 +13,19 @@ import { CalendarView } from "@/components/dashboard/CalendarView";
 import { ContentsView } from "@/components/dashboard/ContentsView";
 import { GeneratorView } from "@/components/dashboard/GeneratorView";
 import { LibraryView } from "@/components/dashboard/LibraryView";
+import { PlannerView } from "@/components/dashboard/PlannerView";
 import { ContentDetailModal } from "@/components/dashboard/ContentDetailModal";
 import { useToast } from "@/hooks/use-toast";
 import { ContentSuggestion } from "@/hooks/useContentSuggestions";
 
-type ViewType = "calendario" | "conteudos" | "biblioteca" | "gerador";
+type ViewType = "planejamento" | "calendario" | "conteudos" | "biblioteca" | "gerador";
 
 const Dashboard = () => {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
   const { profile } = useProfile();
   const { toast } = useToast();
-  const [activeView, setActiveView] = useState<ViewType>("calendario");
+  const [activeView, setActiveView] = useState<ViewType>("planejamento");
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [selectedContent, setSelectedContent] = useState<ContentItem | null>(null);
   const [selectedSuggestion, setSelectedSuggestion] = useState<ContentSuggestion | null>(null);
@@ -32,6 +33,7 @@ const Dashboard = () => {
   const { contents, loading, addContent, updateStatus, deleteContent, stats } = useContentsDB();
 
   const navItems = [
+    { id: "planejamento" as const, label: "Planejamento", icon: CalendarDays },
     { id: "calendario" as const, label: "Calendário", icon: Calendar },
     { id: "conteudos" as const, label: "Conteúdos", icon: LayoutGrid },
     { id: "gerador" as const, label: "Gerador", icon: Sparkles },
@@ -178,6 +180,9 @@ const Dashboard = () => {
         </header>
 
         <main className="flex-1 p-6 overflow-auto">
+          {activeView === "planejamento" && (
+            <PlannerView />
+          )}
           {activeView === "calendario" && (
             <CalendarView
               contents={contents}
