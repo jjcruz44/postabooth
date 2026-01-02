@@ -3,12 +3,13 @@ import { motion, AnimatePresence } from "framer-motion";
 import { 
   CalendarDays, Sparkles, Loader2, Target, 
   RefreshCw, CheckCircle2, Users, BookOpen, 
-  Tag, Eye, MessageSquare 
+  Tag, Eye, MessageSquare, Lock 
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { useCalendarPlanner } from "@/hooks/useCalendarPlanner";
+import { useCalendarPlanner, CalendarDay } from "@/hooks/useCalendarPlanner";
 import { useToast } from "@/hooks/use-toast";
+import { DayContentModal } from "./DayContentModal";
 
 const categoryConfig: Record<string, { icon: React.ElementType; color: string; label: string }> = {
   "prova social": { icon: Users, color: "bg-success/10 text-success border-success/20", label: "Prova Social" },
@@ -26,10 +27,20 @@ const goalSuggestions = [
   "Promover pacotes promocionais de aniversários",
 ];
 
+const FREE_DAYS_LIMIT = 3;
+const IS_PREMIUM = false; // TODO: Replace with actual subscription check
+
 export function PlannerView() {
   const { calendar, monthlyGoal: savedGoal, loading, initialLoading, error, generateCalendar, clearCalendar } = useCalendarPlanner();
   const { toast } = useToast();
   const [goalInput, setGoalInput] = useState("");
+  const [selectedDay, setSelectedDay] = useState<CalendarDay | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
+
+  const handleDayClick = (day: CalendarDay) => {
+    setSelectedDay(day);
+    setModalOpen(true);
+  };
 
   // Sync goal input with saved goal when loaded
   useEffect(() => {
@@ -238,6 +249,7 @@ export function PlannerView() {
                 {calendar.map((day, index) => {
                   const config = categoryConfig[day.category] || categoryConfig["prova social"];
                   const Icon = config.icon;
+                  const isLocked = !IS_PREMIUM && day.day > FREE_DAYS_LIMIT;
                   
                   return (
                     <motion.div
@@ -245,11 +257,20 @@ export function PlannerView() {
                       initial={{ opacity: 0, x: -10 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: index * 0.02 }}
-                      className="p-4 hover:bg-muted/30 transition-colors"
+                      onClick={() => handleDayClick(day)}
+                      className={`p-4 transition-colors cursor-pointer ${
+                        isLocked 
+                          ? "hover:bg-muted/20 opacity-60" 
+                          : "hover:bg-muted/30"
+                      }`}
                     >
                       <div className="flex items-start gap-4">
-                        <div className="w-12 h-12 rounded-lg gradient-primary flex items-center justify-center text-primary-foreground font-bold text-lg shrink-0">
-                          {day.day}
+                        <div className={`w-12 h-12 rounded-lg flex items-center justify-center font-bold text-lg shrink-0 ${
+                          isLocked 
+                            ? "bg-muted text-muted-foreground" 
+                            : "gradient-primary text-primary-foreground"
+                        }`}>
+                          {isLocked ? <Lock className="w-5 h-5" /> : day.day}
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1">
@@ -257,6 +278,9 @@ export function PlannerView() {
                               <Icon className="w-3 h-3" />
                               {config.label}
                             </span>
+                            {isLocked && (
+                              <span className="text-xs text-warning font-medium">Premium</span>
+                            )}
                           </div>
                           <p className="text-foreground font-medium">{day.idea}</p>
                           <p className="text-sm text-muted-foreground mt-1">
@@ -272,6 +296,14 @@ export function PlannerView() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Day Content Modal */}
+      <DayContentModal
+        open={modalOpen}
+        onOpenChange={setModalOpen}
+        day={selectedDay}
+        isPremium={IS_PREMIUM}
+      />
     </div>
   );
 }
