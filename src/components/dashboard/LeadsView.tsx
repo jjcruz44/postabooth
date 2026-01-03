@@ -17,6 +17,8 @@ import {
   ChevronUp,
   Users,
   Search,
+  Calendar,
+  MapPin,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -50,6 +52,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useLeads, Lead, LeadStage, LeadInput } from "@/hooks/useLeads";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 const stageConfig = {
   quente: {
@@ -96,6 +100,8 @@ const LeadForm = ({ initialData, onSubmit, onClose, isEditing }: LeadFormProps) 
     phone: initialData?.phone || "",
     email: initialData?.email || "",
     event_type: initialData?.event_type || "",
+    event_date: initialData?.event_date || "",
+    event_city: initialData?.event_city || "",
     stage: initialData?.stage || "morno",
     budget_sent: initialData?.budget_sent || false,
     budget_value: initialData?.budget_value || undefined,
@@ -184,6 +190,27 @@ const LeadForm = ({ initialData, onSubmit, onClose, isEditing }: LeadFormProps) 
               ))}
             </SelectContent>
           </Select>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="event_date">Data do Evento</Label>
+          <Input
+            id="event_date"
+            type="date"
+            value={formData.event_date}
+            onChange={(e) => setFormData((prev) => ({ ...prev, event_date: e.target.value }))}
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="event_city">Cidade do Evento</Label>
+          <Input
+            id="event_city"
+            value={formData.event_city}
+            onChange={(e) => setFormData((prev) => ({ ...prev, event_city: e.target.value }))}
+            placeholder="São Paulo, SP"
+          />
         </div>
       </div>
 
@@ -349,8 +376,22 @@ const LeadCard = ({ lead, onEdit, onDelete, onUpdateStage }: LeadCardProps) => {
               </Badge>
             </div>
 
-            {lead.event_type && (
-              <p className="text-sm text-muted-foreground mt-1">{lead.event_type}</p>
+            {(lead.event_type || lead.event_date || lead.event_city) && (
+              <div className="flex flex-wrap items-center gap-2 mt-1 text-sm text-muted-foreground">
+                {lead.event_type && <span>{lead.event_type}</span>}
+                {lead.event_date && (
+                  <span className="flex items-center gap-1">
+                    <Calendar className="w-3 h-3" />
+                    {format(new Date(lead.event_date), "dd/MM/yyyy", { locale: ptBR })}
+                  </span>
+                )}
+                {lead.event_city && (
+                  <span className="flex items-center gap-1">
+                    <MapPin className="w-3 h-3" />
+                    {lead.event_city}
+                  </span>
+                )}
+              </div>
             )}
 
             <div className="flex flex-wrap items-center gap-3 mt-2 text-sm text-muted-foreground">

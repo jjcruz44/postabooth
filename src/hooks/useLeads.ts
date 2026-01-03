@@ -12,6 +12,8 @@ export interface Lead {
   phone: string | null;
   email: string | null;
   event_type: string | null;
+  event_date: string | null;
+  event_city: string | null;
   stage: LeadStage;
   budget_sent: boolean;
   budget_value: number | null;
@@ -26,6 +28,8 @@ export interface LeadInput {
   phone?: string;
   email?: string;
   event_type?: string;
+  event_date?: string;
+  event_city?: string;
   stage?: LeadStage;
   budget_sent?: boolean;
   budget_value?: number;
@@ -80,6 +84,8 @@ export function useLeads() {
           phone: input.phone || null,
           email: input.email || null,
           event_type: input.event_type || null,
+          event_date: input.event_date || null,
+          event_city: input.event_city || null,
           stage: input.stage || "morno",
           budget_sent: input.budget_sent || false,
           budget_value: input.budget_value || null,

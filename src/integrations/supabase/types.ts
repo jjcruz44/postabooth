@@ -71,6 +71,8 @@ export type Database = {
           budget_value: number | null
           created_at: string
           email: string | null
+          event_city: string | null
+          event_date: string | null
           event_type: string | null
           id: string
           name: string
@@ -86,6 +88,8 @@ export type Database = {
           budget_value?: number | null
           created_at?: string
           email?: string | null
+          event_city?: string | null
+          event_date?: string | null
           event_type?: string | null
           id?: string
           name: string
@@ -101,6 +105,8 @@ export type Database = {
           budget_value?: number | null
           created_at?: string
           email?: string | null
+          event_city?: string | null
+          event_date?: string | null
           event_type?: string | null
           id?: string
           name?: string
