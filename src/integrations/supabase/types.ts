@@ -65,6 +65,54 @@ export type Database = {
         }
         Relationships: []
       }
+      leads: {
+        Row: {
+          budget_sent: boolean
+          budget_value: number | null
+          created_at: string
+          email: string | null
+          event_type: string | null
+          id: string
+          name: string
+          notes: string | null
+          packages_requested: string[] | null
+          phone: string | null
+          stage: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          budget_sent?: boolean
+          budget_value?: number | null
+          created_at?: string
+          email?: string | null
+          event_type?: string | null
+          id?: string
+          name: string
+          notes?: string | null
+          packages_requested?: string[] | null
+          phone?: string | null
+          stage?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          budget_sent?: boolean
+          budget_value?: number | null
+          created_at?: string
+          email?: string | null
+          event_type?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          packages_requested?: string[] | null
+          phone?: string | null
+          stage?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       monthly_planners: {
         Row: {
           calendar_data: Json
