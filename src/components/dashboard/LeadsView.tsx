@@ -19,6 +19,8 @@ import {
   Search,
   Calendar,
   MapPin,
+  FileText,
+  Send,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -54,6 +56,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useLeads, Lead, LeadStage, LeadInput } from "@/hooks/useLeads";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { MessageTemplatesModal } from "./MessageTemplatesModal";
+import { SendMessageModal } from "./SendMessageModal";
 
 const stageConfig = {
   quente: {
@@ -341,14 +345,15 @@ interface LeadCardProps {
   onEdit: (lead: Lead) => void;
   onDelete: (lead: Lead) => void;
   onUpdateStage: (id: string, stage: LeadStage) => void;
+  onSendMessage: (lead: Lead) => void;
 }
 
-const LeadCard = ({ lead, onEdit, onDelete, onUpdateStage }: LeadCardProps) => {
+const LeadCard = ({ lead, onEdit, onDelete, onUpdateStage, onSendMessage }: LeadCardProps) => {
   const [expanded, setExpanded] = useState(false);
   const config = stageConfig[lead.stage];
   const Icon = config.icon;
 
-  const openWhatsApp = () => {
+  const openWhatsAppQuick = () => {
     if (!lead.phone) return;
     const cleanPhone = lead.phone.replace(/\D/g, "");
     const message = encodeURIComponent(
@@ -412,15 +417,26 @@ const LeadCard = ({ lead, onEdit, onDelete, onUpdateStage }: LeadCardProps) => {
 
           <div className="flex items-center gap-1 shrink-0">
             {lead.phone && (
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={openWhatsApp}
-                className="text-green-500 hover:text-green-600 hover:bg-green-500/10"
-                title="Abrir WhatsApp"
-              >
-                <MessageCircle className="w-4 h-4" />
-              </Button>
+              <>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => onSendMessage(lead)}
+                  className="text-green-500 hover:text-green-600 hover:bg-green-500/10"
+                  title="Enviar mensagem com template"
+                >
+                  <Send className="w-4 h-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={openWhatsAppQuick}
+                  className="text-green-500 hover:text-green-600 hover:bg-green-500/10"
+                  title="WhatsApp rápido"
+                >
+                  <MessageCircle className="w-4 h-4" />
+                </Button>
+              </>
             )}
             <Button variant="ghost" size="icon" onClick={() => onEdit(lead)} title="Editar">
               <Edit2 className="w-4 h-4" />
@@ -533,6 +549,8 @@ export const LeadsView = () => {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingLead, setEditingLead] = useState<Lead | null>(null);
   const [deletingLead, setDeletingLead] = useState<Lead | null>(null);
+  const [isTemplatesOpen, setIsTemplatesOpen] = useState(false);
+  const [sendingMessageLead, setSendingMessageLead] = useState<Lead | null>(null);
 
   const filteredLeads = leads.filter((lead) => {
     const matchesStage = filterStage === "all" || lead.stage === filterStage;
@@ -651,6 +669,11 @@ export const LeadsView = () => {
             </SelectContent>
           </Select>
 
+          <Button variant="outline" onClick={() => setIsTemplatesOpen(true)}>
+            <FileText className="w-4 h-4 mr-2" />
+            <span className="hidden sm:inline">Templates</span>
+          </Button>
+
           <Dialog open={isFormOpen || !!editingLead} onOpenChange={(open) => {
             if (!open) {
               setIsFormOpen(false);
@@ -724,6 +747,7 @@ export const LeadsView = () => {
                 onEdit={setEditingLead}
                 onDelete={setDeletingLead}
                 onUpdateStage={updateStage}
+                onSendMessage={setSendingMessageLead}
               />
             ))}
           </AnimatePresence>
@@ -748,6 +772,18 @@ export const LeadsView = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Templates Modal */}
+      <MessageTemplatesModal open={isTemplatesOpen} onOpenChange={setIsTemplatesOpen} />
+
+      {/* Send Message Modal */}
+      {sendingMessageLead && (
+        <SendMessageModal
+          open={!!sendingMessageLead}
+          onOpenChange={(open) => !open && setSendingMessageLead(null)}
+          lead={sendingMessageLead}
+        />
+      )}
     </div>
   );
 };
