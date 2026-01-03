@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { 
   Settings, LogOut, ChevronLeft, ChevronRight, Search, 
   Sparkles, Loader2, CalendarDays, Lightbulb, Calendar,
-  Menu, X
+  Menu, X, Users
 } from "lucide-react";
 import { useNavigate, Link } from "react-router-dom";
 import postaboothLogo from "@/assets/postabooth-logo.png";
@@ -14,6 +14,7 @@ import { GeneratorView } from "@/components/dashboard/GeneratorView";
 import { PlannerView } from "@/components/dashboard/PlannerView";
 import { SuggestionsView } from "@/components/dashboard/SuggestionsView";
 import { MyCalendarView } from "@/components/dashboard/MyCalendarView";
+import { LeadsView } from "@/components/dashboard/LeadsView";
 import { ContentDetailModal } from "@/components/dashboard/ContentDetailModal";
 import { useToast } from "@/hooks/use-toast";
 import { ContentSuggestion } from "@/hooks/useContentSuggestions";
@@ -22,7 +23,7 @@ import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { ShareButton } from "@/components/dashboard/ShareButton";
 
-type ViewType = "planejamento" | "gerador" | "sugestoes" | "meu-calendario";
+type ViewType = "planejamento" | "gerador" | "sugestoes" | "meu-calendario" | "leads";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -42,6 +43,7 @@ const Dashboard = () => {
     { id: "planejamento" as const, label: "Planejamento Mensal", icon: CalendarDays },
     { id: "meu-calendario" as const, label: "Meu Calendário", icon: Calendar },
     { id: "gerador" as const, label: "Gerador de Posts", icon: Sparkles },
+    { id: "leads" as const, label: "Leads", icon: Users },
     { id: "sugestoes" as const, label: "Sugestões da IA", icon: Lightbulb },
   ];
 
@@ -303,6 +305,9 @@ const Dashboard = () => {
               initialSuggestion={selectedSuggestion}
               onSuggestionUsed={() => setSelectedSuggestion(null)}
             />
+          )}
+          {activeView === "leads" && (
+            <LeadsView />
           )}
           {activeView === "sugestoes" && (
             <SuggestionsView 
