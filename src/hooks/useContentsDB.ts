@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 
-export type ContentStatus = "ideia" | "producao" | "pronto" | "publicado";
+export type ContentStatus = "ideia" | "producao" | "pronto" | "publicado" | "nao_publicado" | "ignorado";
 export type ContentType = "reels" | "carrossel" | "stories";
 
 export interface ContentItem {

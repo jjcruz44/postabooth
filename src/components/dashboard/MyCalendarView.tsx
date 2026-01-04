@@ -3,10 +3,10 @@ import { motion } from "framer-motion";
 import { 
   Calendar, ChevronLeft, ChevronRight, Loader2, 
   Trash2, Video, Images, Camera, Copy, ClipboardList,
-  ChevronDown, ChevronUp
+  ChevronDown, ChevronUp, Check, X, Ban
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useContentsDB, ContentItem, ContentType } from "@/hooks/useContentsDB";
+import { useContentsDB, ContentItem, ContentType, ContentStatus } from "@/hooks/useContentsDB";
 import { useSavedPosts, SavedPost } from "@/hooks/useSavedPosts";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -19,6 +19,11 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 const WEEKDAYS = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 
@@ -34,14 +39,24 @@ const typeColors: Record<ContentType, string> = {
   stories: "bg-pink-500/20 text-pink-500",
 };
 
+// Status visual configuration for calendar
+const calendarStatusConfig: Record<ContentStatus, { bg: string; text: string; icon: React.ElementType; label: string }> = {
+  publicado: { bg: "bg-success/20", text: "text-success", icon: Check, label: "Publicado" },
+  nao_publicado: { bg: "bg-muted", text: "text-muted-foreground", icon: X, label: "Não Publicado" },
+  ignorado: { bg: "bg-muted/50", text: "text-muted-foreground opacity-50", icon: Ban, label: "Ignorado" },
+  ideia: { bg: "bg-muted", text: "text-muted-foreground", icon: X, label: "Não Publicado" },
+  producao: { bg: "bg-muted", text: "text-muted-foreground", icon: X, label: "Não Publicado" },
+  pronto: { bg: "bg-muted", text: "text-muted-foreground", icon: X, label: "Não Publicado" },
+};
+
 export function MyCalendarView() {
   const { toast } = useToast();
-  const { contents, loading, updateContent } = useContentsDB();
+  const { contents, loading, updateContent, deleteContent } = useContentsDB();
   const { posts: savedPosts, loading: loadingPosts, archivePost } = useSavedPosts();
   
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [postToRemove, setPostToRemove] = useState<ContentItem | null>(null);
-  const [postToDelete, setPostToDelete] = useState<SavedPost | null>(null);
+  const [postToDelete, setPostToDelete] = useState<ContentItem | null>(null);
+  const [savedPostToDelete, setSavedPostToDelete] = useState<SavedPost | null>(null);
   const [expandedPostId, setExpandedPostId] = useState<string | null>(null);
 
   const today = new Date();
@@ -105,14 +120,21 @@ export function MyCalendarView() {
     return contents.filter((c) => c.date === dateKey);
   };
 
-  const handleRemoveFromCalendar = async () => {
-    if (!postToRemove) return;
-    // Just remove the date, don't delete the content
-    await updateContent(postToRemove.id, { date: undefined });
-    setPostToRemove(null);
+  const handleDeleteFromCalendar = async () => {
+    if (!postToDelete) return;
+    await deleteContent(postToDelete.id);
+    setPostToDelete(null);
     toast({
-      title: "Post removido",
-      description: "O post foi removido do calendário, mas continua salvo na sua conta.",
+      title: "Post excluído",
+      description: "O post foi excluído definitivamente da sua conta.",
+    });
+  };
+
+  const handleUpdateStatus = async (contentId: string, status: ContentStatus) => {
+    await updateContent(contentId, { status });
+    toast({
+      title: "Status atualizado",
+      description: `Post marcado como "${calendarStatusConfig[status].label}"`,
     });
   };
 
@@ -142,10 +164,10 @@ export function MyCalendarView() {
     copyToClipboard(parts.join("\n\n"), "Conteúdo");
   };
 
-  const handleDeletePost = async () => {
-    if (!postToDelete) return;
-    await archivePost(postToDelete.id);
-    setPostToDelete(null);
+  const handleDeleteSavedPost = async () => {
+    if (!savedPostToDelete) return;
+    await archivePost(savedPostToDelete.id);
+    setSavedPostToDelete(null);
   };
 
   const getSourceLabel = (source: string) => {
@@ -229,28 +251,82 @@ export function MyCalendarView() {
                 
                 <div className="space-y-1">
                   {dayContents.slice(0, 2).map((content) => {
-                    const Icon = typeIcons[content.type];
+                    const TypeIcon = typeIcons[content.type];
+                    const statusConfig = calendarStatusConfig[content.status];
+                    const StatusIcon = statusConfig.icon;
+                    const isIgnored = content.status === "ignorado";
+                    const isPublished = content.status === "publicado";
+                    
                     return (
-                      <div
-                        key={content.id}
-                        className={`group relative text-[10px] md:text-xs p-1 md:p-1.5 rounded ${typeColors[content.type]} cursor-pointer`}
-                        title={content.title}
-                      >
-                        <div className="flex items-center gap-1">
-                          <Icon className="w-3 h-3 shrink-0" />
-                          <span className="truncate flex-1">{content.title}</span>
-                        </div>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setPostToRemove(content);
-                          }}
-                          className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-destructive text-destructive-foreground opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
-                          title="Remover do calendário"
-                        >
-                          <Trash2 className="w-2.5 h-2.5" />
-                        </button>
-                      </div>
+                      <Popover key={content.id}>
+                        <PopoverTrigger asChild>
+                          <div
+                            className={`group relative text-[10px] md:text-xs p-1 md:p-1.5 rounded cursor-pointer transition-all ${
+                              isIgnored 
+                                ? "bg-muted/40 text-muted-foreground opacity-50" 
+                                : isPublished 
+                                  ? "bg-success/20 text-success border border-success/30" 
+                                  : typeColors[content.type]
+                            }`}
+                            title={content.title}
+                          >
+                            <div className="flex items-center gap-1">
+                              {isPublished && <Check className="w-2.5 h-2.5 shrink-0" />}
+                              {isIgnored && <Ban className="w-2.5 h-2.5 shrink-0" />}
+                              {!isPublished && !isIgnored && <TypeIcon className="w-3 h-3 shrink-0" />}
+                              <span className="truncate flex-1">{content.title}</span>
+                            </div>
+                          </div>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-48 p-2" align="start">
+                          <div className="space-y-1">
+                            <p className="text-xs font-medium text-foreground mb-2 truncate">{content.title}</p>
+                            <p className="text-[10px] text-muted-foreground mb-2">Definir status:</p>
+                            <button
+                              onClick={() => handleUpdateStatus(content.id, "publicado")}
+                              className={`w-full flex items-center gap-2 px-2 py-1.5 rounded text-xs transition-colors ${
+                                content.status === "publicado" 
+                                  ? "bg-success/20 text-success" 
+                                  : "hover:bg-muted text-foreground"
+                              }`}
+                            >
+                              <Check className="w-3.5 h-3.5" />
+                              Publicado
+                            </button>
+                            <button
+                              onClick={() => handleUpdateStatus(content.id, "nao_publicado")}
+                              className={`w-full flex items-center gap-2 px-2 py-1.5 rounded text-xs transition-colors ${
+                                content.status === "nao_publicado" || (!["publicado", "ignorado"].includes(content.status))
+                                  ? "bg-muted text-muted-foreground" 
+                                  : "hover:bg-muted text-foreground"
+                              }`}
+                            >
+                              <X className="w-3.5 h-3.5" />
+                              Não Publicado
+                            </button>
+                            <button
+                              onClick={() => handleUpdateStatus(content.id, "ignorado")}
+                              className={`w-full flex items-center gap-2 px-2 py-1.5 rounded text-xs transition-colors ${
+                                content.status === "ignorado" 
+                                  ? "bg-muted/50 text-muted-foreground opacity-60" 
+                                  : "hover:bg-muted text-foreground"
+                              }`}
+                            >
+                              <Ban className="w-3.5 h-3.5" />
+                              Ignorado
+                            </button>
+                            <div className="border-t border-border mt-2 pt-2">
+                              <button
+                                onClick={() => setPostToDelete(content)}
+                                className="w-full flex items-center gap-2 px-2 py-1.5 rounded text-xs text-destructive hover:bg-destructive/10 transition-colors"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                                Excluir definitivamente
+                              </button>
+                            </div>
+                          </div>
+                        </PopoverContent>
+                      </Popover>
                     );
                   })}
                   {dayContents.length > 2 && (
@@ -387,7 +463,7 @@ export function MyCalendarView() {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => setPostToDelete(post)}
+                        onClick={() => setSavedPostToDelete(post)}
                         className="h-9 text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/30"
                       >
                         <Trash2 className="w-3 h-3" />
@@ -409,36 +485,36 @@ export function MyCalendarView() {
         )}
       </div>
 
-      {/* Alert Dialog for removing from calendar */}
-      <AlertDialog open={!!postToRemove} onOpenChange={() => setPostToRemove(null)}>
+      {/* Alert Dialog for deleting from calendar (DEFINITIVE) */}
+      <AlertDialog open={!!postToDelete} onOpenChange={() => setPostToDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Remover do calendário?</AlertDialogTitle>
+            <AlertDialogTitle>Excluir este post definitivamente?</AlertDialogTitle>
             <AlertDialogDescription>
-              O post "{postToRemove?.title}" será removido desta data, mas continuará salvo na sua conta.
+              O post "{postToDelete?.title}" será excluído permanentemente da sua conta. Essa ação não pode ser desfeita.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={handleRemoveFromCalendar}>
-              Remover
+            <AlertDialogAction onClick={handleDeleteFromCalendar} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Excluir definitivamente
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
       {/* Alert Dialog for deleting saved post */}
-      <AlertDialog open={!!postToDelete} onOpenChange={() => setPostToDelete(null)}>
+      <AlertDialog open={!!savedPostToDelete} onOpenChange={() => setSavedPostToDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Excluir post?</AlertDialogTitle>
+            <AlertDialogTitle>Excluir post avulso?</AlertDialogTitle>
             <AlertDialogDescription>
-              O post "{postToDelete?.title}" será excluído permanentemente.
+              O post "{savedPostToDelete?.title}" será excluído permanentemente.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeletePost} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+            <AlertDialogAction onClick={handleDeleteSavedPost} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
               Excluir
             </AlertDialogAction>
           </AlertDialogFooter>
