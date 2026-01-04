@@ -16,6 +16,8 @@ const statusColors: Record<ContentStatus, string> = {
   producao: "bg-warning/10 text-warning",
   pronto: "bg-info/10 text-info",
   publicado: "bg-success/10 text-success",
+  nao_publicado: "bg-muted text-muted-foreground",
+  ignorado: "bg-muted/50 text-muted-foreground opacity-60",
 };
 
 const statusLabels: Record<ContentStatus, string> = {
@@ -23,6 +25,8 @@ const statusLabels: Record<ContentStatus, string> = {
   producao: "Em produção",
   pronto: "Pronto",
   publicado: "Publicado",
+  nao_publicado: "Não Publicado",
+  ignorado: "Ignorado",
 };
 
 interface ContentDetailModalProps {
