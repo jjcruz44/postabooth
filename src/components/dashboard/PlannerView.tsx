@@ -93,6 +93,64 @@ export function PlannerView() {
     return stats;
   };
 
+  // Show premium paywall for free users
+  if (!isPremiumUser) {
+    return (
+      <div className="space-y-4 md:space-y-6">
+        {/* Header */}
+        <div>
+          <h2 className="text-xl md:text-2xl font-bold text-foreground flex items-center gap-2">
+            <CalendarDays className="w-6 h-6 md:w-7 md:h-7 text-primary" />
+            Planejamento Mensal
+            <span className="text-xs px-2 py-0.5 rounded bg-warning/20 text-warning font-semibold">
+              Premium
+            </span>
+          </h2>
+          <p className="text-sm md:text-base text-muted-foreground mt-1">
+            Gere um calendário estratégico de 30 dias para suas redes sociais
+          </p>
+        </div>
+
+        {/* Premium Paywall */}
+        <div className="bg-card rounded-xl border border-border p-8 md:p-12 text-center">
+          <div className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-warning/10 flex items-center justify-center mx-auto mb-4 md:mb-6">
+            <Lock className="w-8 h-8 md:w-10 md:h-10 text-warning" />
+          </div>
+          <h3 className="text-lg md:text-xl font-bold text-foreground mb-2">
+            Recurso exclusivo para assinantes Premium
+          </h3>
+          <p className="text-sm md:text-base text-muted-foreground mb-6 max-w-lg mx-auto">
+            O Planejamento Mensal utiliza inteligência artificial para criar um calendário editorial 
+            personalizado de 30 dias, com estratégias otimizadas para o seu negócio de eventos.
+          </p>
+          
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4 mb-6 max-w-2xl mx-auto text-left">
+            <div className="p-3 md:p-4 rounded-lg border border-border bg-muted/30">
+              <Target className="w-5 h-5 text-primary mb-2" />
+              <p className="text-sm font-medium text-foreground">Calendário de 30 dias</p>
+              <p className="text-xs text-muted-foreground">Posts planejados estrategicamente</p>
+            </div>
+            <div className="p-3 md:p-4 rounded-lg border border-border bg-muted/30">
+              <Sparkles className="w-5 h-5 text-primary mb-2" />
+              <p className="text-sm font-medium text-foreground">Conteúdo por IA</p>
+              <p className="text-xs text-muted-foreground">Legendas e ideias geradas automaticamente</p>
+            </div>
+            <div className="p-3 md:p-4 rounded-lg border border-border bg-muted/30">
+              <Users className="w-5 h-5 text-primary mb-2" />
+              <p className="text-sm font-medium text-foreground">Categorias estratégicas</p>
+              <p className="text-xs text-muted-foreground">Prova social, educativo, ofertas e mais</p>
+            </div>
+          </div>
+
+          <Button size="lg" className="gap-2">
+            <Sparkles className="w-4 h-4" />
+            Seja Premium
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4 md:space-y-6">
       {/* Header */}
@@ -101,6 +159,9 @@ export function PlannerView() {
           <h2 className="text-xl md:text-2xl font-bold text-foreground flex items-center gap-2">
             <CalendarDays className="w-6 h-6 md:w-7 md:h-7 text-primary" />
             Planejamento Mensal
+            <span className="text-xs px-2 py-0.5 rounded bg-warning/20 text-warning font-semibold">
+              Premium
+            </span>
           </h2>
           <p className="text-sm md:text-base text-muted-foreground mt-1">
             Gere um calendário estratégico de 30 dias para suas redes sociais
