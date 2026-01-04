@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
-  Sparkles, Video, Image, MessageSquare, Loader2, Copy, Check, X, Hash, Lightbulb, Save, CalendarIcon, AlertCircle 
+  Sparkles, Video, Image, MessageSquare, Loader2, Copy, Check, X, Hash, Lightbulb, Save, CalendarIcon, AlertCircle, RefreshCw, ArrowRight
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { ContentType } from "@/hooks/useContentsDB";
 import { useSavedPosts } from "@/hooks/useSavedPosts";
+import { useContentSuggestions, ContentSuggestion } from "@/hooks/useContentSuggestions";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useAuth } from "@/contexts/AuthContext";
@@ -114,6 +115,7 @@ export function GeneratorView({ onSaveContent, initialSuggestion, onSuggestionUs
   const { toast } = useToast();
   const { session, loading: authLoading } = useAuth();
   const { savePost } = useSavedPosts();
+  const { suggestions, loading: suggestionsLoading, fetchSuggestions, refreshSuggestions } = useContentSuggestions();
   const [selectedContentType, setSelectedContentType] = useState<ContentType>("reels");
   const [selectedEventType, setSelectedEventType] = useState("Casamento");
   const [selectedObjective, setSelectedObjective] = useState("Autoridade");
@@ -122,9 +124,16 @@ export function GeneratorView({ onSaveContent, initialSuggestion, onSuggestionUs
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedContent, setGeneratedContent] = useState<GeneratedContent | null>(null);
   const [copiedField, setCopiedField] = useState<string | null>(null);
+  const [savedSuggestionIds, setSavedSuggestionIds] = useState<Set<string>>(new Set());
+  const [savingSuggestionId, setSavingSuggestionId] = useState<string | null>(null);
 
   // Check if session is ready for API calls
   const isSessionReady = !authLoading && session !== null && !!session.access_token;
+
+  // Fetch suggestions on mount
+  useEffect(() => {
+    fetchSuggestions();
+  }, [fetchSuggestions]);
 
   // Apply suggestion when it changes
   useEffect(() => {
@@ -136,6 +145,38 @@ export function GeneratorView({ onSaveContent, initialSuggestion, onSuggestionUs
       onSuggestionUsed?.();
     }
   }, [initialSuggestion, onSuggestionUsed]);
+
+  const handleUseSuggestion = (suggestion: ContentSuggestion) => {
+    setSelectedContentType(suggestion.type || "reels");
+    setSelectedEventType(suggestion.eventType || "Casamento");
+    setSelectedObjective(suggestion.objective || "Autoridade");
+    setMainIdea(suggestion.description || "");
+    toast({
+      title: "Sugestão aplicada!",
+      description: "Os campos foram preenchidos com a ideia selecionada.",
+    });
+  };
+
+  const handleSaveSuggestion = async (e: React.MouseEvent, suggestion: ContentSuggestion) => {
+    e.stopPropagation();
+    setSavingSuggestionId(suggestion.id);
+
+    const result = await savePost({
+      source: "sugestoes_ia",
+      title: suggestion.title,
+      short_caption: suggestion.description,
+    });
+
+    if (result) {
+      setSavedSuggestionIds((prev) => new Set([...prev, suggestion.id]));
+      toast({
+        title: "Sugestão salva!",
+        description: "Salva em Posts Avulsos.",
+      });
+    }
+
+    setSavingSuggestionId(null);
+  };
 
   const handleGenerate = async () => {
     // Guard: Block if session is not ready
@@ -272,17 +313,151 @@ export function GeneratorView({ onSaveContent, initialSuggestion, onSuggestionUs
     }
   };
 
+  const typeIcons: Record<ContentType, React.ElementType> = {
+    reels: Video,
+    carrossel: Image,
+    stories: MessageSquare,
+  };
+
   return (
     <div className="max-w-4xl mx-auto space-y-6 md:space-y-8">
+      {/* Quick Suggestions Section */}
+      <div className="bg-card rounded-xl p-4 md:p-6 border border-border">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 md:w-10 md:h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+              <Lightbulb className="w-4 h-4 md:w-5 md:h-5 text-primary" />
+            </div>
+            <div>
+              <h3 className="text-base md:text-lg font-semibold text-foreground">Sugestões rápidas da IA</h3>
+              <p className="text-xs md:text-sm text-muted-foreground">
+                Ideias prontas para você usar
+              </p>
+            </div>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={refreshSuggestions}
+            disabled={suggestionsLoading}
+            className="gap-2 w-full sm:w-auto"
+          >
+            {suggestionsLoading ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <RefreshCw className="w-4 h-4" />
+            )}
+            Novas ideias
+          </Button>
+        </div>
+
+        {suggestionsLoading ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="bg-muted/50 rounded-lg p-4 animate-pulse">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="w-8 h-8 bg-muted rounded-lg" />
+                  <div className="flex-1">
+                    <div className="h-4 bg-muted rounded w-3/4 mb-1" />
+                    <div className="h-3 bg-muted rounded w-1/2" />
+                  </div>
+                </div>
+                <div className="h-3 bg-muted rounded w-full mb-2" />
+                <div className="h-3 bg-muted rounded w-2/3" />
+              </div>
+            ))}
+          </div>
+        ) : suggestions.length > 0 ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {suggestions.slice(0, 6).map((suggestion, index) => {
+              const Icon = typeIcons[suggestion.type];
+              return (
+                <motion.div
+                  key={suggestion.id}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.05 }}
+                  className="bg-gradient-to-br from-primary/5 to-primary/10 rounded-lg p-4 border border-primary/20 hover:border-primary/40 hover:shadow-md transition-all cursor-pointer group"
+                  onClick={() => handleUseSuggestion(suggestion)}
+                >
+                  <div className="flex items-start justify-between mb-2">
+                    <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                      <Icon className="w-4 h-4 text-primary" />
+                    </div>
+                    <ArrowRight className="w-4 h-4 text-primary opacity-0 group-hover:opacity-100 transition-opacity" />
+                  </div>
+                  <h4 className="font-semibold text-foreground text-sm mb-1.5 line-clamp-2">
+                    {suggestion.title}
+                  </h4>
+                  <p className="text-xs text-muted-foreground line-clamp-2 mb-2">
+                    {suggestion.description}
+                  </p>
+                  <div className="flex items-center gap-1.5 flex-wrap mb-2">
+                    <span className="text-xs px-1.5 py-0.5 bg-primary/10 text-primary rounded-full font-medium">
+                      {suggestion.type}
+                    </span>
+                    <span className="text-xs px-1.5 py-0.5 bg-muted text-muted-foreground rounded-full">
+                      {suggestion.objective}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2 pt-2 border-t border-primary/10">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1 gap-1 h-7 text-xs"
+                      onClick={(e) => handleSaveSuggestion(e, suggestion)}
+                      disabled={savingSuggestionId === suggestion.id || savedSuggestionIds.has(suggestion.id)}
+                    >
+                      {savingSuggestionId === suggestion.id ? (
+                        <Loader2 className="w-3 h-3 animate-spin" />
+                      ) : savedSuggestionIds.has(suggestion.id) ? (
+                        <Check className="w-3 h-3" />
+                      ) : (
+                        <Save className="w-3 h-3" />
+                      )}
+                      {savedSuggestionIds.has(suggestion.id) ? "Salvo" : "Salvar"}
+                    </Button>
+                    <Button
+                      variant="default"
+                      size="sm"
+                      className="flex-1 gap-1 h-7 text-xs"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleUseSuggestion(suggestion);
+                      }}
+                    >
+                      <Sparkles className="w-3 h-3" />
+                      Usar
+                    </Button>
+                  </div>
+                </motion.div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="bg-muted/30 rounded-lg p-6 border border-dashed border-border text-center">
+            <Sparkles className="w-10 h-10 text-muted-foreground/50 mx-auto mb-3" />
+            <p className="text-sm text-muted-foreground mb-3">
+              Clique em "Novas ideias" para gerar sugestões
+            </p>
+            <Button variant="outline" size="sm" onClick={refreshSuggestions} className="gap-2">
+              <Sparkles className="w-4 h-4" />
+              Gerar sugestões
+            </Button>
+          </div>
+        )}
+      </div>
+
+      {/* Generator Section */}
       <div className="text-center">
         <div className="w-14 h-14 md:w-16 md:h-16 rounded-2xl gradient-primary flex items-center justify-center mx-auto mb-3 md:mb-4">
           <Sparkles className="w-7 h-7 md:w-8 md:h-8 text-primary-foreground" />
         </div>
         <h2 className="text-xl md:text-2xl font-bold text-foreground mb-2">
-          Gerador de Conteúdo com IA
+          Criar post agora
         </h2>
         <p className="text-sm md:text-base text-muted-foreground">
-          Crie roteiros, legendas e hashtags em segundos
+          Gere roteiros, legendas e hashtags personalizados
         </p>
       </div>
 
