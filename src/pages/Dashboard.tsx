@@ -39,7 +39,7 @@ const Dashboard = () => {
   const { contents, loading, addContent, updateStatus, deleteContent, stats } = useContentsDB();
 
   const navItems = [
-    { id: "planejamento" as const, label: "Planejamento Mensal", icon: CalendarDays, premium: true },
+    { id: "planejamento" as const, label: "Planejamento", icon: CalendarDays, premium: true },
     { id: "meu-calendario" as const, label: "Meu Calendário", icon: Calendar, premium: false },
     { id: "gerador" as const, label: "Gerador de Posts", icon: Sparkles, premium: false },
     { id: "leads" as const, label: "Leads", icon: Users, premium: false },
