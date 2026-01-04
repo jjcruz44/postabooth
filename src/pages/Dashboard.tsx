@@ -39,10 +39,10 @@ const Dashboard = () => {
   const { contents, loading, addContent, updateStatus, deleteContent, stats } = useContentsDB();
 
   const navItems = [
-    { id: "planejamento" as const, label: "Planejamento Mensal", icon: CalendarDays },
-    { id: "meu-calendario" as const, label: "Meu Calendário", icon: Calendar },
-    { id: "gerador" as const, label: "Gerador de Posts", icon: Sparkles },
-    { id: "leads" as const, label: "Leads", icon: Users },
+    { id: "planejamento" as const, label: "Planejamento Mensal", icon: CalendarDays, premium: true },
+    { id: "meu-calendario" as const, label: "Meu Calendário", icon: Calendar, premium: false },
+    { id: "gerador" as const, label: "Gerador de Posts", icon: Sparkles, premium: false },
+    { id: "leads" as const, label: "Leads", icon: Users, premium: false },
   ];
 
   const handleSaveContent = async (content: {
@@ -130,6 +130,11 @@ const Dashboard = () => {
           >
             <item.icon className="w-5 h-5 shrink-0" />
             <span className="text-sm">{item.label}</span>
+            {item.premium && (
+              <span className="ml-auto text-[10px] px-1.5 py-0.5 rounded bg-warning/20 text-warning font-semibold">
+                Premium
+              </span>
+            )}
           </button>
         ))}
       </nav>
@@ -202,6 +207,11 @@ const Dashboard = () => {
               >
                 <item.icon className="w-5 h-5 shrink-0" />
                 {sidebarOpen && <span className="text-sm">{item.label}</span>}
+                {sidebarOpen && item.premium && (
+                  <span className="ml-auto text-[10px] px-1.5 py-0.5 rounded bg-warning/20 text-warning font-semibold">
+                    Premium
+                  </span>
+                )}
               </button>
             ))}
           </nav>

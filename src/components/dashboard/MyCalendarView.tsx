@@ -1,15 +1,14 @@
-import { useState, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
 import { 
-  Calendar, CheckCircle2, XCircle, MinusCircle, 
-  Loader2, AlertCircle, FileText, Copy, Hash, Trash2, ClipboardList,
+  Calendar, ChevronLeft, ChevronRight, Loader2, 
+  Trash2, Video, Images, Camera, Copy, ClipboardList,
   ChevronDown, ChevronUp
 } from "lucide-react";
-import { useCalendarPlanner, CalendarDay } from "@/hooks/useCalendarPlanner";
 import { Button } from "@/components/ui/button";
-import { useNavigate } from "react-router-dom";
-import { useToast } from "@/hooks/use-toast";
+import { useContentsDB, ContentItem, ContentType } from "@/hooks/useContentsDB";
 import { useSavedPosts, SavedPost } from "@/hooks/useSavedPosts";
+import { useToast } from "@/hooks/use-toast";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -21,80 +20,100 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
-type PostStatus = "postado" | "nao_postado" | "ignorado";
+const WEEKDAYS = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 
-interface DayWithStatus extends CalendarDay {
-  status: PostStatus;
-}
-
-const statusConfig: Record<PostStatus, { icon: React.ElementType; color: string; label: string }> = {
-  postado: { icon: CheckCircle2, color: "bg-success/10 text-success border-success/30", label: "Postado" },
-  nao_postado: { icon: XCircle, color: "bg-muted/50 text-muted-foreground border-border", label: "Não postado" },
-  ignorado: { icon: MinusCircle, color: "bg-warning/10 text-warning border-warning/30", label: "Ignorado" },
+const typeIcons: Record<ContentType, React.ElementType> = {
+  reels: Video,
+  carrossel: Images,
+  stories: Camera,
 };
 
-const STORAGE_KEY = "my_calendar_status";
+const typeColors: Record<ContentType, string> = {
+  reels: "bg-purple-500/20 text-purple-500",
+  carrossel: "bg-info/20 text-info",
+  stories: "bg-pink-500/20 text-pink-500",
+};
 
 export function MyCalendarView() {
-  const navigate = useNavigate();
   const { toast } = useToast();
-  const { calendar, initialLoading } = useCalendarPlanner();
+  const { contents, loading, updateContent } = useContentsDB();
   const { posts: savedPosts, loading: loadingPosts, archivePost } = useSavedPosts();
-  const [daysWithStatus, setDaysWithStatus] = useState<DayWithStatus[]>([]);
+  
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const [postToRemove, setPostToRemove] = useState<ContentItem | null>(null);
   const [postToDelete, setPostToDelete] = useState<SavedPost | null>(null);
   const [expandedPostId, setExpandedPostId] = useState<string | null>(null);
 
-  // Load saved statuses from localStorage on mount
-  useEffect(() => {
-    if (calendar.length > 0) {
-      const savedStatuses = localStorage.getItem(STORAGE_KEY);
-      const statusMap: Record<number, PostStatus> = savedStatuses ? JSON.parse(savedStatuses) : {};
-      
-      const withStatus = calendar.map((day) => ({
-        ...day,
-        status: statusMap[day.day] || "nao_postado" as PostStatus,
-      }));
-      
-      setDaysWithStatus(withStatus);
+  const today = new Date();
+  const year = currentDate.getFullYear();
+  const month = currentDate.getMonth();
+  const monthName = currentDate.toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
+  
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const startingDayOfWeek = new Date(year, month, 1).getDay();
+
+  const calendarDays = useMemo(() => {
+    const days: (number | null)[] = [];
+    for (let i = 0; i < startingDayOfWeek; i++) {
+      days.push(null);
     }
-  }, [calendar]);
+    for (let day = 1; day <= daysInMonth; day++) {
+      days.push(day);
+    }
+    const remainingSlots = (7 - (days.length % 7)) % 7;
+    for (let i = 0; i < remainingSlots; i++) {
+      days.push(null);
+    }
+    return days;
+  }, [year, month, daysInMonth, startingDayOfWeek]);
 
-  // Save statuses to localStorage whenever they change
-  const updateStatus = (dayNumber: number, newStatus: PostStatus) => {
-    setDaysWithStatus((prev) => {
-      const updated = prev.map((d) =>
-        d.day === dayNumber ? { ...d, status: newStatus } : d
-      );
-      
-      // Save to localStorage
-      const statusMap: Record<number, PostStatus> = {};
-      updated.forEach((d) => {
-        statusMap[d.day] = d.status;
-      });
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(statusMap));
-      
-      return updated;
+  const goToPreviousMonth = () => {
+    setCurrentDate(new Date(year, month - 1, 1));
+  };
+
+  const goToNextMonth = () => {
+    setCurrentDate(new Date(year, month + 1, 1));
+  };
+
+  const goToToday = () => {
+    setCurrentDate(new Date());
+  };
+
+  const formatDateKey = (day: number) => {
+    const d = new Date(year, month, day);
+    return d.toISOString().split("T")[0];
+  };
+
+  const isToday = (day: number) => {
+    return (
+      today.getDate() === day &&
+      today.getMonth() === month &&
+      today.getFullYear() === year
+    );
+  };
+
+  const isPastDay = (day: number) => {
+    const dayDate = new Date(year, month, day);
+    dayDate.setHours(0, 0, 0, 0);
+    const todayDate = new Date();
+    todayDate.setHours(0, 0, 0, 0);
+    return dayDate < todayDate;
+  };
+
+  const getContentsForDay = (day: number) => {
+    const dateKey = formatDateKey(day);
+    return contents.filter((c) => c.date === dateKey);
+  };
+
+  const handleRemoveFromCalendar = async () => {
+    if (!postToRemove) return;
+    // Just remove the date, don't delete the content
+    await updateContent(postToRemove.id, { date: undefined });
+    setPostToRemove(null);
+    toast({
+      title: "Post removido",
+      description: "O post foi removido do calendário, mas continua salvo na sua conta.",
     });
-  };
-
-  const cycleStatus = (dayNumber: number) => {
-    const currentDay = daysWithStatus.find((d) => d.day === dayNumber);
-    if (!currentDay) return;
-
-    const statusOrder: PostStatus[] = ["nao_postado", "postado", "ignorado"];
-    const currentIndex = statusOrder.indexOf(currentDay.status);
-    const nextStatus = statusOrder[(currentIndex + 1) % statusOrder.length];
-    
-    updateStatus(dayNumber, nextStatus);
-  };
-
-  const getStats = () => {
-    const stats = {
-      postado: daysWithStatus.filter((d) => d.status === "postado").length,
-      nao_postado: daysWithStatus.filter((d) => d.status === "nao_postado").length,
-      ignorado: daysWithStatus.filter((d) => d.status === "ignorado").length,
-    };
-    return stats;
   };
 
   const copyToClipboard = async (text: string, label: string) => {
@@ -137,16 +156,13 @@ export function MyCalendarView() {
     setExpandedPostId((prev) => (prev === postId ? null : postId));
   };
 
-  if (initialLoading) {
+  if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
       </div>
     );
   }
-
-  const stats = getStats();
-  const hasCalendar = calendar.length > 0;
 
   return (
     <div className="space-y-6 md:space-y-8">
@@ -157,119 +173,97 @@ export function MyCalendarView() {
           Meu Calendário
         </h2>
         <p className="text-sm md:text-base text-muted-foreground mt-1">
-          Acompanhe o que você já postou neste mês e mantenha consistência.
+          Visualize e gerencie seus posts agendados por data
         </p>
       </div>
 
-      {/* Calendar Section */}
-      {hasCalendar ? (
-        <>
-          {/* Stats */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4">
-            {Object.entries(statusConfig).map(([key, config]) => {
-              const Icon = config.icon;
-              const count = stats[key as PostStatus];
-              return (
-                <div key={key} className={`p-3 md:p-4 rounded-xl border ${config.color}`}>
-                  <div className="flex items-center gap-2">
-                    <Icon className="w-4 h-4 md:w-5 md:h-5" />
-                    <span className="font-medium text-sm md:text-base">{config.label}</span>
-                  </div>
-                  <div className="text-2xl md:text-3xl font-bold mt-1 md:mt-2">{count}</div>
-                  <div className="text-xs opacity-70 mt-1">
-                    de {daysWithStatus.length} dias
-                  </div>
-                </div>
-              );
-            })}
+      {/* Calendar Navigation */}
+      <div className="bg-card rounded-xl border border-border overflow-hidden">
+        <div className="p-3 md:p-4 border-b border-border bg-muted/30 flex items-center justify-between">
+          <Button variant="ghost" size="sm" onClick={goToPreviousMonth}>
+            <ChevronLeft className="w-4 h-4" />
+          </Button>
+          <div className="text-center">
+            <h3 className="font-semibold text-foreground capitalize">{monthName}</h3>
+            <Button variant="link" size="sm" onClick={goToToday} className="text-xs h-auto p-0">
+              Ir para hoje
+            </Button>
           </div>
-
-          {/* Progress Bar */}
-          <div className="bg-card rounded-xl border border-border p-3 md:p-4">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-foreground">Progresso do mês</span>
-              <span className="text-xs md:text-sm text-muted-foreground">
-                {stats.postado} de {daysWithStatus.length} postados
-              </span>
-            </div>
-            <div className="h-2 md:h-3 bg-muted rounded-full overflow-hidden">
-              <div 
-                className="h-full bg-success transition-all duration-300"
-                style={{ width: `${(stats.postado / daysWithStatus.length) * 100}%` }}
-              />
-            </div>
-          </div>
-
-          {/* Calendar List */}
-          <div className="bg-card rounded-xl border border-border overflow-hidden">
-            <div className="p-3 md:p-4 border-b border-border bg-muted/30">
-              <p className="text-xs md:text-sm text-muted-foreground">
-                Clique em um dia para alterar o status
-              </p>
-            </div>
-            
-            <div className="divide-y divide-border max-h-[350px] md:max-h-[400px] overflow-y-auto">
-              {daysWithStatus.map((day, index) => {
-                const config = statusConfig[day.status];
-                const Icon = config.icon;
-                
-                return (
-                  <motion.div
-                    key={day.day}
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: index * 0.01 }}
-                    onClick={() => cycleStatus(day.day)}
-                    className="p-3 md:p-4 hover:bg-muted/30 transition-colors cursor-pointer"
-                  >
-                    <div className="flex items-start md:items-center gap-3 md:gap-4 flex-col sm:flex-row">
-                      <div className="flex items-center gap-3 w-full sm:w-auto">
-                        <div className="w-10 h-10 rounded-lg gradient-primary text-primary-foreground flex items-center justify-center font-bold shrink-0">
-                          {day.day}
-                        </div>
-                        
-                        <div className="flex-1 min-w-0 sm:hidden">
-                          <p className="text-foreground font-medium text-sm line-clamp-1">{day.idea}</p>
-                          <p className="text-xs text-muted-foreground line-clamp-1">{day.objective}</p>
-                        </div>
-                        
-                        <div className={`flex items-center gap-1.5 px-2 py-1 rounded-full border ${config.color} sm:hidden`}>
-                          <Icon className="w-3 h-3" />
-                          <span className="text-xs font-medium">{config.label}</span>
-                        </div>
-                      </div>
-                      
-                      <div className="hidden sm:block flex-1 min-w-0">
-                        <p className="text-foreground font-medium truncate">{day.idea}</p>
-                        <p className="text-sm text-muted-foreground truncate">{day.objective}</p>
-                      </div>
-                      
-                      <div className={`hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full border ${config.color}`}>
-                        <Icon className="w-4 h-4" />
-                        <span className="text-sm font-medium">{config.label}</span>
-                      </div>
-                    </div>
-                  </motion.div>
-                );
-              })}
-            </div>
-          </div>
-        </>
-      ) : (
-        <div className="bg-card rounded-xl border border-border p-6 md:p-8 text-center">
-          <AlertCircle className="w-10 h-10 md:w-12 md:h-12 text-muted-foreground mx-auto mb-3 md:mb-4" />
-          <h3 className="text-base md:text-lg font-medium text-foreground mb-2">
-            Nenhum planejamento encontrado
-          </h3>
-          <p className="text-sm md:text-base text-muted-foreground mb-4 md:mb-6 max-w-md mx-auto">
-            Você precisa criar um planejamento mensal primeiro para acompanhar seu progresso aqui.
-          </p>
-          <Button onClick={() => navigate("/dashboard")} className="gap-2">
-            <Calendar className="w-4 h-4" />
-            Ir para Planejamento Mensal
+          <Button variant="ghost" size="sm" onClick={goToNextMonth}>
+            <ChevronRight className="w-4 h-4" />
           </Button>
         </div>
-      )}
+
+        {/* Weekday headers */}
+        <div className="grid grid-cols-7 border-b border-border bg-muted/20">
+          {WEEKDAYS.map((day) => (
+            <div key={day} className="p-2 text-center text-xs font-medium text-muted-foreground">
+              {day}
+            </div>
+          ))}
+        </div>
+
+        {/* Calendar grid */}
+        <div className="grid grid-cols-7">
+          {calendarDays.map((day, index) => {
+            if (day === null) {
+              return <div key={`empty-${index}`} className="min-h-[80px] md:min-h-[100px] border-r border-b border-border bg-muted/10" />;
+            }
+
+            const dayContents = getContentsForDay(day);
+            const isPast = isPastDay(day);
+            const isTodayDay = isToday(day);
+
+            return (
+              <div
+                key={day}
+                className={`min-h-[80px] md:min-h-[100px] border-r border-b border-border p-1.5 md:p-2 transition-colors ${
+                  isPast ? "bg-muted/30 opacity-60" : "bg-card hover:bg-muted/20"
+                } ${isTodayDay ? "ring-2 ring-inset ring-primary" : ""}`}
+              >
+                <div className={`text-xs md:text-sm font-medium mb-1 ${
+                  isTodayDay ? "text-primary font-bold" : isPast ? "text-muted-foreground" : "text-foreground"
+                }`}>
+                  {day}
+                </div>
+                
+                <div className="space-y-1">
+                  {dayContents.slice(0, 2).map((content) => {
+                    const Icon = typeIcons[content.type];
+                    return (
+                      <div
+                        key={content.id}
+                        className={`group relative text-[10px] md:text-xs p-1 md:p-1.5 rounded ${typeColors[content.type]} cursor-pointer`}
+                        title={content.title}
+                      >
+                        <div className="flex items-center gap-1">
+                          <Icon className="w-3 h-3 shrink-0" />
+                          <span className="truncate flex-1">{content.title}</span>
+                        </div>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setPostToRemove(content);
+                          }}
+                          className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-destructive text-destructive-foreground opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
+                          title="Remover do calendário"
+                        >
+                          <Trash2 className="w-2.5 h-2.5" />
+                        </button>
+                      </div>
+                    );
+                  })}
+                  {dayContents.length > 2 && (
+                    <div className="text-[10px] text-muted-foreground text-center">
+                      +{dayContents.length - 2} mais
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
 
       {/* Divider */}
       <div className="border-t border-border" />
@@ -346,7 +340,7 @@ export function MyCalendarView() {
                     </div>
                   </div>
                   
-                  {/* Actions row - stack on mobile */}
+                  {/* Actions row */}
                   <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 mt-3 pt-3 border-t border-border">
                     {hasExpandableContent && (
                       <Button
@@ -381,17 +375,6 @@ export function MyCalendarView() {
                           <span className="sm:hidden">Legenda</span>
                         </Button>
                       )}
-                      {post.hashtags && post.hashtags.length > 0 && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => copyToClipboard(post.hashtags!.join(" "), "Hashtags")}
-                          className="flex-1 sm:flex-none h-9 gap-1.5 text-xs"
-                        >
-                          <Hash className="w-3 h-3" />
-                          <span className="sm:hidden">Hashtags</span>
-                        </Button>
-                      )}
                       <Button
                         variant="outline"
                         size="sm"
@@ -417,32 +400,45 @@ export function MyCalendarView() {
           </div>
         ) : (
           <div className="bg-muted/30 rounded-xl border border-dashed border-border p-6 md:p-8 text-center">
-            <FileText className="w-8 h-8 md:w-10 md:h-10 text-muted-foreground mx-auto mb-3" />
-            <p className="text-sm md:text-base text-muted-foreground">
-              Nenhum post avulso salvo ainda
-            </p>
-            <p className="text-xs md:text-sm text-muted-foreground mt-1">
-              Salve posts no Gerador ou nas Sugestões da IA
+            <ClipboardList className="w-10 h-10 md:w-12 md:h-12 text-muted-foreground mx-auto mb-3" />
+            <h4 className="font-medium text-foreground mb-1">Nenhum post avulso salvo</h4>
+            <p className="text-sm text-muted-foreground">
+              Use o Gerador de Posts para criar e salvar conteúdos.
             </p>
           </div>
         )}
       </div>
 
-      {/* Delete Confirmation Dialog */}
+      {/* Alert Dialog for removing from calendar */}
+      <AlertDialog open={!!postToRemove} onOpenChange={() => setPostToRemove(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remover do calendário?</AlertDialogTitle>
+            <AlertDialogDescription>
+              O post "{postToRemove?.title}" será removido desta data, mas continuará salvo na sua conta.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleRemoveFromCalendar}>
+              Remover
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Alert Dialog for deleting saved post */}
       <AlertDialog open={!!postToDelete} onOpenChange={() => setPostToDelete(null)}>
-        <AlertDialogContent className="max-w-[90vw] sm:max-w-lg">
+        <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Excluir post?</AlertDialogTitle>
             <AlertDialogDescription>
-              Tem certeza que deseja excluir "{postToDelete?.title}"? Esta ação não pode ser desfeita.
+              O post "{postToDelete?.title}" será excluído permanentemente.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter className="flex-col sm:flex-row gap-2">
-            <AlertDialogCancel className="w-full sm:w-auto">Cancelar</AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={handleDeletePost} 
-              className="w-full sm:w-auto bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeletePost} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
               Excluir
             </AlertDialogAction>
           </AlertDialogFooter>
