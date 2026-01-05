@@ -221,10 +221,11 @@ export function GeneratorView({ onSaveContent, initialSuggestion, onSuggestionUs
   const handleSave = async () => {
     if (!generatedContent) return;
 
-    // Save to saved_posts table
+    // Save to saved_posts table with all content
     const savedPost = await savePost({
       source: "gerador",
       title: generatedContent.titulo,
+      ideia: generatedContent.ideia,
       short_caption: generatedContent.legenda,
       expanded_text: generatedContent.roteiro,
     });

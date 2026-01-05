@@ -9,9 +9,9 @@ export interface SavedPost {
   id: string;
   source: SavedPostSource;
   title: string;
+  ideia: string | null;
   short_caption: string | null;
   expanded_text: string | null;
-  hashtags: string[];
   created_at: string;
   archived: boolean;
 }
@@ -43,9 +43,9 @@ export function useSavedPosts() {
         id: item.id,
         source: item.source as SavedPostSource,
         title: item.title,
+        ideia: item.ideia,
         short_caption: item.short_caption,
         expanded_text: item.expanded_text,
-        hashtags: item.hashtags || [],
         created_at: item.created_at,
         archived: item.archived,
       }));
@@ -70,9 +70,9 @@ export function useSavedPosts() {
   const savePost = async (post: {
     source: SavedPostSource;
     title: string;
+    ideia?: string;
     short_caption?: string;
     expanded_text?: string;
-    hashtags?: string[];
   }) => {
     if (!user) return null;
 
@@ -83,9 +83,9 @@ export function useSavedPosts() {
           user_id: user.id,
           source: post.source,
           title: post.title,
+          ideia: post.ideia || null,
           short_caption: post.short_caption || null,
           expanded_text: post.expanded_text || null,
-          hashtags: post.hashtags || [],
         })
         .select()
         .single();
@@ -96,9 +96,9 @@ export function useSavedPosts() {
         id: data.id,
         source: data.source as SavedPostSource,
         title: data.title,
+        ideia: data.ideia,
         short_caption: data.short_caption,
         expanded_text: data.expanded_text,
-        hashtags: data.hashtags || [],
         created_at: data.created_at,
         archived: data.archived,
       };
