@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Calendar, Lightbulb, FolderOpen, LayoutGrid, Sparkles, Target } from "lucide-react";
+import { Calendar, Lightbulb, FolderOpen, LayoutGrid, Sparkles, Users } from "lucide-react";
 
 const features = [
   {
@@ -28,9 +28,9 @@ const features = [
     description: "Escolha o tipo de evento e o sistema adapta linguagem, tom e CTAs automaticamente.",
   },
   {
-    icon: Target,
-    title: "Foco em Conversão",
-    description: "Cada conteúdo tem um objetivo claro: atrair, criar autoridade, mostrar prova social ou vender.",
+    icon: Users,
+    title: "Área de Leads",
+    description: "Gerencie, monitore e converse com os seus Leads, aumentando a possibilidade de conversão.",
   },
 ];
 
