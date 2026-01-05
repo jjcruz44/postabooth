@@ -228,6 +228,7 @@ export function GeneratorView({ onSaveContent, initialSuggestion, onSuggestionUs
       ideia: generatedContent.ideia,
       short_caption: generatedContent.legenda,
       expanded_text: generatedContent.roteiro,
+      scheduled_date: selectedDate ? selectedDate.toISOString().split("T")[0] : undefined,
     });
 
     if (savedPost) {

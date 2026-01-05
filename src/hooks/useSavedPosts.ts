@@ -12,6 +12,7 @@ export interface SavedPost {
   ideia: string | null;
   short_caption: string | null;
   expanded_text: string | null;
+  scheduled_date: string | null;
   created_at: string;
   archived: boolean;
 }
@@ -46,6 +47,7 @@ export function useSavedPosts() {
         ideia: item.ideia,
         short_caption: item.short_caption,
         expanded_text: item.expanded_text,
+        scheduled_date: item.scheduled_date,
         created_at: item.created_at,
         archived: item.archived,
       }));
@@ -73,6 +75,7 @@ export function useSavedPosts() {
     ideia?: string;
     short_caption?: string;
     expanded_text?: string;
+    scheduled_date?: string;
   }) => {
     if (!user) return null;
 
@@ -86,6 +89,7 @@ export function useSavedPosts() {
           ideia: post.ideia || null,
           short_caption: post.short_caption || null,
           expanded_text: post.expanded_text || null,
+          scheduled_date: post.scheduled_date || null,
         })
         .select()
         .single();
@@ -99,6 +103,7 @@ export function useSavedPosts() {
         ideia: data.ideia,
         short_caption: data.short_caption,
         expanded_text: data.expanded_text,
+        scheduled_date: data.scheduled_date,
         created_at: data.created_at,
         archived: data.archived,
       };
