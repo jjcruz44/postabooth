@@ -225,6 +225,7 @@ export type Database = {
           expanded_text: string | null
           hashtags: string[] | null
           id: string
+          ideia: string | null
           short_caption: string | null
           source: string
           title: string
@@ -236,6 +237,7 @@ export type Database = {
           expanded_text?: string | null
           hashtags?: string[] | null
           id?: string
+          ideia?: string | null
           short_caption?: string | null
           source: string
           title: string
@@ -247,6 +249,7 @@ export type Database = {
           expanded_text?: string | null
           hashtags?: string[] | null
           id?: string
+          ideia?: string | null
           short_caption?: string | null
           source?: string
           title?: string

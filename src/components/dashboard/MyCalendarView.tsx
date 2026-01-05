@@ -156,9 +156,11 @@ export function MyCalendarView() {
 
   const copyAll = (post: SavedPost) => {
     const parts: string[] = [];
-    if (post.short_caption) parts.push(post.short_caption);
-    if (post.expanded_text) parts.push(post.expanded_text);
-    copyToClipboard(parts.join("\n\n"), "Conteúdo");
+    if (post.title) parts.push(`📌 ${post.title}`);
+    if (post.ideia) parts.push(`💡 Ideia: ${post.ideia}`);
+    if (post.expanded_text) parts.push(`📋 Roteiro:\n${post.expanded_text}`);
+    if (post.short_caption) parts.push(`✍️ Legenda:\n${post.short_caption}`);
+    copyToClipboard(parts.join("\n\n"), "Conteúdo completo");
   };
 
   const handleDeleteSavedPost = async () => {
@@ -363,8 +365,7 @@ export function MyCalendarView() {
           <div className="space-y-3">
             {savedPosts.map((post, index) => {
               const isExpanded = expandedPostId === post.id;
-              const hasExpandableContent = (post.short_caption && post.short_caption.length > 100) || 
-                                           (post.expanded_text && post.expanded_text.length > 0);
+              const hasExpandableContent = post.ideia || post.expanded_text;
               
               return (
                 <motion.div
@@ -385,22 +386,39 @@ export function MyCalendarView() {
                           {new Date(post.created_at).toLocaleDateString("pt-BR")}
                         </span>
                       </div>
-                      <h4 className="font-medium text-foreground text-sm md:text-base mb-1 line-clamp-2">
+                      <h4 className="font-medium text-foreground text-sm md:text-base mb-2">
                         {post.title}
                       </h4>
+                      
+                      {/* Legenda always visible */}
                       {post.short_caption && (
-                        <p className={`text-xs md:text-sm text-muted-foreground ${isExpanded ? '' : 'line-clamp-2'}`}>
-                          {post.short_caption}
-                        </p>
+                        <div className="mb-2">
+                          <p className="text-xs font-medium text-muted-foreground mb-1">Legenda:</p>
+                          <p className="text-xs md:text-sm text-foreground whitespace-pre-wrap">
+                            {post.short_caption}
+                          </p>
+                        </div>
                       )}
                       
-                      {/* Expanded content */}
-                      {isExpanded && post.expanded_text && (
-                        <div className="mt-3 pt-3 border-t border-border">
-                          <p className="text-xs text-muted-foreground mb-2">Roteiro:</p>
-                          <p className="text-xs md:text-sm text-muted-foreground whitespace-pre-wrap">
-                            {post.expanded_text}
-                          </p>
+                      {/* Expanded content: Ideia + Roteiro */}
+                      {isExpanded && (
+                        <div className="space-y-3 mt-3 pt-3 border-t border-border">
+                          {post.ideia && (
+                            <div>
+                              <p className="text-xs font-medium text-muted-foreground mb-1">Ideia Principal:</p>
+                              <p className="text-xs md:text-sm text-foreground whitespace-pre-wrap">
+                                {post.ideia}
+                              </p>
+                            </div>
+                          )}
+                          {post.expanded_text && (
+                            <div>
+                              <p className="text-xs font-medium text-muted-foreground mb-1">Roteiro:</p>
+                              <p className="text-xs md:text-sm text-foreground whitespace-pre-wrap">
+                                {post.expanded_text}
+                              </p>
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>
