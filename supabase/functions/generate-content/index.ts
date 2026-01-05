@@ -75,7 +75,6 @@ serve(async (req) => {
     const userProfile = await getUserProfile(supabaseUrl, supabaseServiceKey, user.id);
     const brandStyle = userProfile?.brand_style || '';
     const userServices = userProfile?.services?.join(', ') || 'cabines fotográficas';
-    const userEvents = userProfile?.events?.join(', ') || eventType;
     const userCity = userProfile?.city || '';
     
     console.log('Generating content for user:', user.id, { contentType, eventType, objective, mainIdea, brandStyle });
@@ -85,46 +84,48 @@ serve(async (req) => {
       throw new Error('LOVABLE_API_KEY is not configured');
     }
 
-    // Professional social media copywriter prompt - SHORT and ready-to-post
-    const systemPrompt = `Você é um copywriter de redes sociais especializado em pequenos negócios de eventos (cabines fotográficas, totens, plataformas 360).
+    // New standardized prompt for short, actionable content
+    const systemPrompt = `Você é um copywriter especializado em criar posts curtos e prontos para usar para profissionais de eventos (cabines fotográficas, totens, espelho mágico).
 
-Crie conteúdo CURTO e PRONTO PARA POSTAR no Instagram.
+REGRAS OBRIGATÓRIAS:
+1. Todo post deve ter EXATAMENTE 4 blocos, nesta ordem:
+   - TÍTULO: Curto, para organização interna (ex: "Prova social – Evento corporativo")
+   - IDEIA PRINCIPAL: Uma frase clara explicando o objetivo do post
+   - ROTEIRO: UM único roteiro simples e prático, fácil de seguir
+   - LEGENDA: Texto PRONTO para postar (máximo 4 linhas curtas, linguagem natural, máximo 1 CTA)
 
-REGRAS (MUITO IMPORTANTE):
-1) A legenda PRINCIPAL deve ser CURTA e fácil de postar:
-   - 3 a 5 linhas curtas
-   - Máximo 450 caracteres
-   - Linguagem simples
-2) Adicione UM CTA claro no final, alinhado ao objetivo.
-3) Crie um texto expandido OPCIONAL (para quem quiser mais).
-4) Gere apenas 8-12 hashtags relevantes.
-5) Evite explicações, tom didático ou parágrafos longos.`;
+2. NÃO GERAR:
+   - Hashtags
+   - Textos longos ou parágrafos extensos
+   - Múltiplas variações ou ideias
+   - Conteúdos genéricos ou abstratos
+   - Emojis em excesso
+
+3. O conteúdo deve ser:
+   - Fácil de entender
+   - Rápido de executar
+   - Pronto para copiar e postar sem editar
+
+Tom de voz: ${brandStyle || 'Profissional, direto e acessível'}`;
 
     // Build user prompt with all context
-    let userPrompt = `Negócio:
-- Tipo: Aluguel de ${userServices}
-- Cidade/Região: ${userCity || 'Brasil'}
-- Público principal: Noivos, organizadores de eventos corporativos e festas
-- Tom: ${brandStyle || 'Profissional e acessível'}
+    let userPrompt = `Crie um post para:
+- Tipo de conteúdo: ${contentType}
+- Tipo de evento: ${eventType}
+- Objetivo: ${objective}
+${mainIdea ? `- Ideia base: ${mainIdea}` : ''}
+- Negócio: ${userServices}${userCity ? ` em ${userCity}` : ''}
 
-Dia do calendário:
-- Categoria do conteúdo: ${eventType}
-- Objetivo do post: ${objective}
-${mainIdea ? `- Ideia do conteúdo: ${mainIdea}` : ''}
-
-VOCÊ DEVE RETORNAR UM JSON COM EXATAMENTE ESTA ESTRUTURA:
+RETORNE UM JSON COM ESTA ESTRUTURA EXATA:
 
 {
-  "titulo": "Título atrativo do post (máximo 60 caracteres)",
-  "ideia": "Descrição breve da ideia central (1 frase)",
-  "roteiro": ${contentType === 'reels' ? '"Roteiro curto para Reels:\\n- Hook (3 seg)\\n- Desenvolvimento\\n- CTA final"' : contentType === 'carrossel' ? '"Array com 5-7 slides curtos"' : '"Sequência de 3-5 stories"'},
-  "legenda": "Legenda CURTA (3-5 linhas, max 450 chars) com gancho + CTA",
-  "textoSugerido": "Texto expandido opcional (para quem quiser mais detalhes)",
-  "cta": "Chamada para ação principal",
-  "hashtags": ["8", "a", "12", "hashtags", "relevantes"]
+  "titulo": "Título curto para organização interna",
+  "ideia": "Uma frase clara explicando o objetivo deste post",
+  "roteiro": "Roteiro único e simples: passo a passo curto ou orientação direta para executar o post",
+  "legenda": "Legenda curta pronta para postar (máx 4 linhas, linguagem natural, pode ter 1 CTA no final)"
 }
 
-Retorne APENAS o JSON, sem markdown.`;
+Retorne APENAS o JSON, sem markdown ou explicações.`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",

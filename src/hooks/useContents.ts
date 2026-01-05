@@ -14,7 +14,6 @@ export interface ContentItem {
   roteiro?: string;
   legenda?: string;
   cta?: string;
-  hashtags?: string[];
   createdAt: Date;
 }
 

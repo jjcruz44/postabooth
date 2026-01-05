@@ -17,7 +17,6 @@ export interface ContentItem {
   roteiro?: string;
   legenda?: string;
   cta?: string;
-  hashtags?: string[];
   createdAt: string;
 }
 
@@ -54,7 +53,6 @@ export function useContentsDB() {
         roteiro: item.roteiro || undefined,
         legenda: item.legenda || undefined,
         cta: item.cta || undefined,
-        hashtags: item.hashtags || undefined,
         createdAt: item.created_at,
       }));
 
@@ -92,7 +90,6 @@ export function useContentsDB() {
           roteiro: content.roteiro,
           legenda: content.legenda,
           cta: content.cta,
-          hashtags: content.hashtags,
         })
         .select()
         .single();
@@ -110,7 +107,6 @@ export function useContentsDB() {
         roteiro: data.roteiro || undefined,
         legenda: data.legenda || undefined,
         cta: data.cta || undefined,
-        hashtags: data.hashtags || undefined,
         createdAt: data.created_at,
       };
 
@@ -141,7 +137,6 @@ export function useContentsDB() {
       if (updates.roteiro !== undefined) dbUpdates.roteiro = updates.roteiro;
       if (updates.legenda !== undefined) dbUpdates.legenda = updates.legenda;
       if (updates.cta !== undefined) dbUpdates.cta = updates.cta;
-      if (updates.hashtags !== undefined) dbUpdates.hashtags = updates.hashtags;
 
       const { error } = await supabase
         .from("contents")

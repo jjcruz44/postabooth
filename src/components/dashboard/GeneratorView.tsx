@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
-  Sparkles, Video, Image, MessageSquare, Loader2, Copy, Check, X, Hash, Lightbulb, Save, CalendarIcon, AlertCircle, RefreshCw, ArrowRight
+  Sparkles, Video, Image, MessageSquare, Loader2, Copy, Check, X, Lightbulb, Save, CalendarIcon, AlertCircle, RefreshCw, ArrowRight
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -15,69 +15,11 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useAuth } from "@/contexts/AuthContext";
 
-interface StorySlide {
-  conteudo: string;
-  elemento_interativo_sugerido?: string;
-}
-
-interface CarouselSlide {
-  numero?: number;
-  titulo?: string;
-  conteudo?: string;
-  sugestao_visual?: string;
-}
-
-type RoteiroType = string | StorySlide[] | CarouselSlide[];
-
 interface GeneratedContent {
   titulo: string;
   ideia: string;
-  roteiro: RoteiroType;
+  roteiro: string;
   legenda: string;
-  cta: string;
-  hashtags: string[];
-}
-
-function formatRoteiro(roteiro: RoteiroType): string {
-  if (typeof roteiro === "string") {
-    return roteiro;
-  }
-  
-  if (Array.isArray(roteiro)) {
-    return roteiro
-      .map((item, index) => {
-        // Handle string items in array
-        if (typeof item === "string") {
-          return item;
-        }
-        
-        // Ensure item is an object before using 'in' operator
-        if (item && typeof item === "object") {
-          if ("conteudo" in item) {
-            // Stories format
-            const storyItem = item as StorySlide;
-            let text = `Story ${index + 1}: ${storyItem.conteudo}`;
-            if (storyItem.elemento_interativo_sugerido) {
-              text += `\n  → Interativo: ${storyItem.elemento_interativo_sugerido}`;
-            }
-            return text;
-          } else if ("titulo" in item || "numero" in item) {
-            // Carousel format
-            const carouselItem = item as CarouselSlide;
-            let text = `Slide ${carouselItem.numero || index + 1}`;
-            if (carouselItem.titulo) text += `: ${carouselItem.titulo}`;
-            if (carouselItem.conteudo) text += `\n  ${carouselItem.conteudo}`;
-            if (carouselItem.sugestao_visual) text += `\n  → Visual: ${carouselItem.sugestao_visual}`;
-            return text;
-          }
-        }
-        
-        return typeof item === "object" ? JSON.stringify(item) : String(item);
-      })
-      .join("\n\n");
-  }
-  
-  return String(roteiro);
 }
 
 const contentTypes = [
@@ -284,8 +226,7 @@ export function GeneratorView({ onSaveContent, initialSuggestion, onSuggestionUs
       source: "gerador",
       title: generatedContent.titulo,
       short_caption: generatedContent.legenda,
-      expanded_text: formatRoteiro(generatedContent.roteiro),
-      hashtags: generatedContent.hashtags,
+      expanded_text: generatedContent.roteiro,
     });
 
     if (savedPost) {
@@ -296,10 +237,10 @@ export function GeneratorView({ onSaveContent, initialSuggestion, onSuggestionUs
           type: selectedContentType,
           objective: selectedObjective,
           eventType: selectedEventType,
-          roteiro: formatRoteiro(generatedContent.roteiro),
+          roteiro: generatedContent.roteiro,
           legenda: generatedContent.legenda,
-          cta: generatedContent.cta,
-          hashtags: generatedContent.hashtags,
+          cta: "",
+          hashtags: [],
           date: selectedDate.toISOString().split("T")[0],
         });
       }
@@ -457,7 +398,7 @@ export function GeneratorView({ onSaveContent, initialSuggestion, onSuggestionUs
           Criar post agora
         </h2>
         <p className="text-sm md:text-base text-muted-foreground">
-          Gere roteiros, legendas e hashtags personalizados
+          Gere roteiros e legendas prontos para usar
         </p>
       </div>
 
@@ -690,7 +631,7 @@ export function GeneratorView({ onSaveContent, initialSuggestion, onSuggestionUs
 
                 {/* Idea */}
                 <ContentSection
-                  label="Ideia"
+                  label="Ideia Principal"
                   content={generatedContent.ideia}
                   onCopy={() => copyToClipboard(generatedContent.ideia, "Ideia")}
                   copied={copiedField === "Ideia"}
@@ -700,8 +641,8 @@ export function GeneratorView({ onSaveContent, initialSuggestion, onSuggestionUs
                 {/* Script */}
                 <ContentSection
                   label="Roteiro"
-                  content={formatRoteiro(generatedContent.roteiro)}
-                  onCopy={() => copyToClipboard(formatRoteiro(generatedContent.roteiro), "Roteiro")}
+                  content={generatedContent.roteiro}
+                  onCopy={() => copyToClipboard(generatedContent.roteiro, "Roteiro")}
                   copied={copiedField === "Roteiro"}
                   block
                 />
@@ -713,51 +654,8 @@ export function GeneratorView({ onSaveContent, initialSuggestion, onSuggestionUs
                   onCopy={() => copyToClipboard(generatedContent.legenda, "Legenda")}
                   copied={copiedField === "Legenda"}
                   block
-                />
-
-                {/* CTA */}
-                <ContentSection
-                  label="CTA"
-                  content={generatedContent.cta}
-                  onCopy={() => copyToClipboard(generatedContent.cta, "CTA")}
-                  copied={copiedField === "CTA"}
                   highlight
                 />
-
-                {/* Hashtags */}
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-medium text-primary uppercase tracking-wide flex items-center gap-1">
-                      <Hash className="w-3 h-3" />
-                      Hashtags
-                    </span>
-                    <button
-                      onClick={() =>
-                        copyToClipboard(
-                          generatedContent.hashtags.map((h) => `#${h}`).join(" "),
-                          "Hashtags"
-                        )
-                      }
-                      className="p-1 rounded hover:bg-muted transition-colors"
-                    >
-                      {copiedField === "Hashtags" ? (
-                        <Check className="w-4 h-4 text-success" />
-                      ) : (
-                        <Copy className="w-4 h-4 text-muted-foreground" />
-                      )}
-                    </button>
-                  </div>
-                  <div className="flex flex-wrap gap-1.5 md:gap-2">
-                    {generatedContent.hashtags.map((tag, i) => (
-                      <span
-                        key={i}
-                        className="px-2 py-0.5 md:py-1 bg-primary/10 text-primary text-xs rounded-full font-medium"
-                      >
-                        #{tag}
-                      </span>
-                    ))}
-                  </div>
-                </div>
               </div>
             </motion.div>
           ) : (
@@ -817,7 +715,7 @@ function ContentSection({
         </button>
       </div>
       {block ? (
-        <div className="bg-muted/50 rounded-lg p-3 text-sm text-foreground whitespace-pre-wrap">
+        <div className={`rounded-lg p-3 text-sm text-foreground whitespace-pre-wrap ${highlight ? "bg-primary/5 border border-primary/20" : "bg-muted/50"}`}>
           {content}
         </div>
       ) : (

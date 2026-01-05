@@ -48,7 +48,7 @@ export function LibraryView({ contents, onSelectContent, onDeleteContent, onUseS
     : contents.filter(c => c.type === filter);
 
   const copyContent = (content: ContentItem) => {
-    const text = `📌 ${content.title}\n\n${content.roteiro || ""}\n\n📝 Legenda:\n${content.legenda || ""}\n\n👉 CTA: ${content.cta || ""}\n\n${(content.hashtags || []).map(h => `#${h}`).join(" ")}`;
+    const text = `📌 ${content.title}\n\n${content.roteiro || ""}\n\n📝 Legenda:\n${content.legenda || ""}\n\n👉 CTA: ${content.cta || ""}`;
     navigator.clipboard.writeText(text);
     setCopiedId(content.id);
     setTimeout(() => setCopiedId(null), 2000);
