@@ -66,7 +66,6 @@ const Dashboard = () => {
       roteiro: content.roteiro,
       legenda: content.legenda,
       cta: content.cta,
-      hashtags: content.hashtags,
     });
   };
 

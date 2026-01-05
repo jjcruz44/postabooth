@@ -28,19 +28,26 @@ serve(async (req) => {
       throw new Error('LOVABLE_API_KEY is not configured');
     }
 
-    const systemPrompt = `Você é um assistente criativo especializado em marketing para profissionais de cabines fotográficas, espelho mágico e totens para eventos.
+    const systemPrompt = `Você é um assistente criativo para profissionais de cabines fotográficas e totens para eventos.
 
-Seu trabalho é sugerir ideias de conteúdo relevantes e criativas para redes sociais.`;
+Gere ideias de posts CURTAS, CLARAS e EXECUTÁVEIS.
 
-    const userPrompt = `Gere 4 sugestões de posts para redes sociais para um profissional de cabines fotográficas e espelho mágico para eventos.
+REGRAS:
+- Cada sugestão deve ter título curto e descrição em 1 frase clara
+- A descrição é a IDEIA PRINCIPAL do post (o que comunicar)
+- Seja específico para o nicho de eventos
+- NÃO sugira hashtags
+- NÃO use linguagem genérica`;
 
-Para cada sugestão, retorne um JSON array com esta estrutura:
+    const userPrompt = `Gere 4 ideias de posts para redes sociais para um profissional de cabines fotográficas.
+
+Retorne um JSON array com esta estrutura:
 
 [
   {
     "id": "suggestion_1",
-    "title": "Título curto e atrativo (máx 50 caracteres)",
-    "description": "Descrição breve da ideia do conteúdo em 1-2 frases",
+    "title": "Título curto (máx 40 caracteres)",
+    "description": "Ideia principal em 1 frase clara (o que esse post vai comunicar)",
     "type": "reels" | "carrossel" | "stories",
     "eventType": "Casamento" | "Corporativo" | "15 Anos" | "Infantil" | "Formatura",
     "objective": "Atração" | "Autoridade" | "Prova Social" | "Venda"
@@ -48,13 +55,12 @@ Para cada sugestão, retorne um JSON array com esta estrutura:
 ]
 
 REGRAS:
-1. As sugestões devem ser variadas em tipo de conteúdo e objetivo
-2. Considere sazonalidade e tendências atuais
-3. Foque em ideias que gerem engajamento real
-4. Seja específico para o nicho de eventos e fotografia
-5. Retorne EXATAMENTE 4 sugestões
+1. Varie os tipos de conteúdo e objetivos
+2. Seja específico para o nicho de eventos e fotografia
+3. Retorne EXATAMENTE 4 sugestões
+4. A "description" deve explicar claramente o objetivo do post
 
-Retorne APENAS o JSON array, sem markdown ou explicações.`;
+Retorne APENAS o JSON array, sem markdown.`;
 
     console.log('Calling AI gateway...');
 

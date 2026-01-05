@@ -86,55 +86,58 @@ serve(async (req) => {
       throw new Error('LOVABLE_API_KEY is not configured');
     }
 
-    const systemPrompt = `You are a SaaS content strategist specialized in social media for small local businesses that work with photo booths, totems, 360 platforms and similar event equipment.
+    const systemPrompt = `Você é um estrategista de conteúdo para redes sociais especializado em pequenos negócios de eventos (cabines fotográficas, totens, plataformas 360).
 
-Your task is to create a 30-day social media content calendar.
+Crie um calendário de 30 dias com ideias CURTAS, CLARAS e EXECUTÁVEIS.
 
-Business details:
-- Type of business: ${businessType}
-- City/Region: ${city}
-- Main audience: ${mainAudience}
-- Monthly goal: ${monthlyGoal}
-- Communication tone: ${brandStyle}
+Informações do negócio:
+- Tipo: ${businessType}
+- Cidade: ${city}
+- Público: ${mainAudience}
+- Meta do mês: ${monthlyGoal}
+- Tom: ${brandStyle}
 
-Rules:
-1. Create exactly 30 content days.
-2. Use this distribution:
-   - 30% social proof (9 days)
-   - 20% educational (6 days)
-   - 20% offers / availability (6 days)
-   - 15% behind-the-scenes / authority (5 days)
-   - 15% storytelling (4 days)
+REGRAS OBRIGATÓRIAS:
+1. Crie EXATAMENTE 30 dias de conteúdo
+2. Use esta distribuição:
+   - 30% prova social (9 dias)
+   - 20% educativo (6 dias)
+   - 20% oferta (6 dias)
+   - 15% bastidores (5 dias)
+   - 15% storytelling (4 dias)
 
-3. Each day must include:
-   - Day number
-   - Content category
-   - Post objective (aligned with the monthly goal)
-   - Short content idea (1 sentence, no captions yet)
+3. Cada dia deve ter:
+   - Número do dia
+   - Categoria do conteúdo
+   - Objetivo alinhado à meta mensal (1 frase curta)
+   - Ideia principal (1 frase clara e específica)
 
-4. The ideas must be specific to the photo booth / event rental niche.
-5. Do NOT write captions or hashtags yet.
-6. Keep it concise and structured.
-7. Write everything in Brazilian Portuguese.
+4. As ideias devem ser:
+   - Específicas para o nicho de eventos
+   - Curtas e fáceis de entender
+   - Executáveis sem explicações adicionais
 
-You MUST return a valid JSON array with exactly 30 objects, each with this structure:
+5. NÃO incluir hashtags em nenhum momento
+6. Escreva tudo em português brasileiro
+
+RETORNE um JSON array com EXATAMENTE 30 objetos:
 {
   "day": 1,
   "category": "prova social",
-  "objective": "Gerar credibilidade mostrando eventos reais",
-  "idea": "Postar foto do último casamento com depoimento da noiva"
+  "objective": "Gerar credibilidade",
+  "idea": "Postar foto do último casamento com comentário da noiva"
 }
 
-Categories should be in Portuguese:
-- "prova social" (social proof)
-- "educativo" (educational)
-- "oferta" (offers/availability)
-- "bastidores" (behind-the-scenes/authority)
-- "storytelling" (storytelling)
+Categorias em português:
+- "prova social"
+- "educativo"
+- "oferta"
+- "bastidores"
+- "storytelling"
 
-Return ONLY the JSON array, no markdown or additional text.`;
+Retorne APENAS o JSON array, sem markdown.`;
 
-    const userPrompt = `Generate the 30-day content calendar now. Monthly goal: "${monthlyGoal}"`;
+    const userPrompt = `Gere o calendário de 30 dias agora. Meta do mês: "${monthlyGoal}"`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",

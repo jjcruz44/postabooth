@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
-  X, Loader2, Copy, Check, Lock, Sparkles, 
-  RefreshCw, Save, Crown 
+  Loader2, Copy, Check, Lock, 
+  RefreshCw, Crown 
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { 
@@ -21,8 +21,6 @@ interface DayContent {
   title: string;
   legenda: string | null;
   roteiro: string | null;
-  cta: string | null;
-  hashtags: string[] | null;
 }
 
 interface DayContentModalProps {
@@ -61,7 +59,7 @@ export function DayContentModal({ open, onOpenChange, day }: DayContentModalProp
       // Check if content already exists for this day
       const { data, error } = await supabase
         .from("contents")
-        .select("id, title, legenda, roteiro, cta, hashtags")
+        .select("id, title, legenda, roteiro")
         .eq("user_id", user.id)
         .eq("scheduled_date", getDateForDay(day.day))
         .maybeSingle();
@@ -132,12 +130,10 @@ export function DayContentModal({ open, onOpenChange, day }: DayContentModalProp
           objective: day.objective,
           legenda: data.legenda,
           roteiro: typeof data.roteiro === 'string' ? data.roteiro : JSON.stringify(data.roteiro),
-          cta: data.cta,
-          hashtags: data.hashtags || [],
           scheduled_date: scheduledDate,
           status: "ideia",
         }])
-        .select("id, title, legenda, roteiro, cta, hashtags")
+        .select("id, title, legenda, roteiro")
         .single();
 
       if (saveError) throw saveError;
@@ -255,6 +251,7 @@ export function DayContentModal({ open, onOpenChange, day }: DayContentModalProp
                   content={content.legenda || ""}
                   onCopy={() => copyToClipboard(content.legenda || "", "legenda")}
                   copied={copiedField === "legenda"}
+                  variant="highlight"
                 />
 
                 {/* Roteiro */}
@@ -266,49 +263,6 @@ export function DayContentModal({ open, onOpenChange, day }: DayContentModalProp
                     copied={copiedField === "roteiro"}
                     variant="muted"
                   />
-                )}
-
-                {/* CTA */}
-                {content.cta && (
-                  <ContentSection
-                    title="CTA"
-                    content={content.cta}
-                    onCopy={() => copyToClipboard(content.cta || "", "cta")}
-                    copied={copiedField === "cta"}
-                    variant="highlight"
-                  />
-                )}
-
-                {/* Hashtags */}
-                {content.hashtags && content.hashtags.length > 0 && (
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <h4 className="text-xs md:text-sm font-medium text-foreground">Hashtags</h4>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => copyToClipboard(content.hashtags?.join(" ") || "", "hashtags")}
-                        className="h-7 gap-1.5"
-                      >
-                        {copiedField === "hashtags" ? (
-                          <Check className="w-3 h-3 text-success" />
-                        ) : (
-                          <Copy className="w-3 h-3" />
-                        )}
-                        Copiar
-                      </Button>
-                    </div>
-                    <div className="flex flex-wrap gap-1.5">
-                      {content.hashtags.map((tag, i) => (
-                        <span
-                          key={i}
-                          className="px-2 py-0.5 md:py-1 text-xs rounded-full bg-primary/10 text-primary border border-primary/20"
-                        >
-                          #{tag.replace(/^#/, "")}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
                 )}
 
                 {/* Actions */}

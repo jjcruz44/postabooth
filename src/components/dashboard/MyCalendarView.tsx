@@ -158,9 +158,6 @@ export function MyCalendarView() {
     const parts: string[] = [];
     if (post.short_caption) parts.push(post.short_caption);
     if (post.expanded_text) parts.push(post.expanded_text);
-    if (post.hashtags && post.hashtags.length > 0) {
-      parts.push(post.hashtags.join(" "));
-    }
     copyToClipboard(parts.join("\n\n"), "Conteúdo");
   };
 
@@ -367,7 +364,7 @@ export function MyCalendarView() {
             {savedPosts.map((post, index) => {
               const isExpanded = expandedPostId === post.id;
               const hasExpandableContent = (post.short_caption && post.short_caption.length > 100) || 
-                                           (post.hashtags && post.hashtags.length > 5);
+                                           (post.expanded_text && post.expanded_text.length > 0);
               
               return (
                 <motion.div
@@ -398,19 +395,12 @@ export function MyCalendarView() {
                       )}
                       
                       {/* Expanded content */}
-                      {isExpanded && post.hashtags && post.hashtags.length > 0 && (
+                      {isExpanded && post.expanded_text && (
                         <div className="mt-3 pt-3 border-t border-border">
-                          <p className="text-xs text-muted-foreground mb-2">Hashtags:</p>
-                          <div className="flex flex-wrap gap-1.5">
-                            {post.hashtags.map((tag, i) => (
-                              <span
-                                key={i}
-                                className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary"
-                              >
-                                #{tag.replace(/^#/, "")}
-                              </span>
-                            ))}
-                          </div>
+                          <p className="text-xs text-muted-foreground mb-2">Roteiro:</p>
+                          <p className="text-xs md:text-sm text-muted-foreground whitespace-pre-wrap">
+                            {post.expanded_text}
+                          </p>
                         </div>
                       )}
                     </div>

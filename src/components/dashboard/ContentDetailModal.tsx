@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Video, Image, MessageSquare, Target, Calendar, Copy, Check, Hash } from "lucide-react";
+import { X, Video, Image, MessageSquare, Target, Calendar, Copy, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ContentItem, ContentStatus, ContentType } from "@/hooks/useContentsDB";
 import { useState } from "react";
@@ -187,7 +187,7 @@ export function ContentDetailModal({ content, onClose, onUpdateStatus }: Content
                     )}
                   </button>
                 </div>
-                <div className="bg-muted/50 rounded-lg p-2.5 md:p-3 text-xs md:text-sm text-foreground whitespace-pre-wrap break-words">
+                <div className="bg-primary/5 border border-primary/20 rounded-lg p-2.5 md:p-3 text-xs md:text-sm text-foreground whitespace-pre-wrap break-words">
                   {content.legenda}
                 </div>
               </div>
@@ -212,40 +212,6 @@ export function ContentDetailModal({ content, onClose, onUpdateStatus }: Content
                   </button>
                 </div>
                 <p className="text-xs md:text-sm font-medium text-primary break-words">{content.cta}</p>
-              </div>
-            )}
-
-            {/* Hashtags */}
-            {content.hashtags && content.hashtags.length > 0 && (
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-medium text-primary uppercase tracking-wide flex items-center gap-1">
-                    <Hash className="w-3 h-3" />
-                    Hashtags
-                  </span>
-                  <button
-                    onClick={() =>
-                      copyToClipboard(content.hashtags!.map((h) => `#${h}`).join(" "), "Hashtags")
-                    }
-                    className="p-1.5 rounded hover:bg-muted transition-colors"
-                  >
-                    {copiedField === "Hashtags" ? (
-                      <Check className="w-4 h-4 text-success" />
-                    ) : (
-                      <Copy className="w-4 h-4 text-muted-foreground" />
-                    )}
-                  </button>
-                </div>
-                <div className="flex flex-wrap gap-1.5 md:gap-2">
-                  {content.hashtags.map((tag, i) => (
-                    <span
-                      key={i}
-                      className="px-2 py-0.5 md:py-1 bg-primary/10 text-primary text-xs rounded-full font-medium"
-                    >
-                      #{tag}
-                    </span>
-                  ))}
-                </div>
               </div>
             )}
 
