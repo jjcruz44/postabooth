@@ -387,6 +387,11 @@ export function MyCalendarView() {
                         </span>
                       </div>
                       <h4 className="font-medium text-foreground text-sm md:text-base mb-2">
+                        {post.scheduled_date && (
+                          <span className="text-primary font-semibold mr-2">
+                            {new Date(post.scheduled_date + "T12:00:00").toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })}
+                          </span>
+                        )}
                         {post.title}
                       </h4>
                       

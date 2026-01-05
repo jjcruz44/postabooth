@@ -226,6 +226,7 @@ export type Database = {
           hashtags: string[] | null
           id: string
           ideia: string | null
+          scheduled_date: string | null
           short_caption: string | null
           source: string
           title: string
@@ -238,6 +239,7 @@ export type Database = {
           hashtags?: string[] | null
           id?: string
           ideia?: string | null
+          scheduled_date?: string | null
           short_caption?: string | null
           source: string
           title: string
@@ -250,6 +252,7 @@ export type Database = {
           hashtags?: string[] | null
           id?: string
           ideia?: string | null
+          scheduled_date?: string | null
           short_caption?: string | null
           source?: string
           title?: string
