@@ -4,6 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 
 export type LeadStage = "quente" | "morno" | "frio";
+export type LeadStatus = "lead" | "cliente" | "perdido";
 
 export interface Lead {
   id: string;
@@ -15,6 +16,7 @@ export interface Lead {
   event_date: string | null;
   event_city: string | null;
   stage: LeadStage;
+  lead_status: LeadStatus;
   budget_sent: boolean;
   budget_value: number | null;
   packages_requested: string[] | null;
@@ -31,6 +33,7 @@ export interface LeadInput {
   event_date?: string;
   event_city?: string;
   stage?: LeadStage;
+  lead_status?: LeadStatus;
   budget_sent?: boolean;
   budget_value?: number;
   packages_requested?: string[];
@@ -87,6 +90,7 @@ export function useLeads() {
           event_date: input.event_date || null,
           event_city: input.event_city || null,
           stage: input.stage || "morno",
+          lead_status: input.lead_status || "lead",
           budget_sent: input.budget_sent || false,
           budget_value: input.budget_value || null,
           packages_requested: input.packages_requested || null,
@@ -181,8 +185,16 @@ export function useLeads() {
     return updateLead(id, { stage });
   };
 
+  const updateLeadStatus = async (id: string, lead_status: LeadStatus): Promise<boolean> => {
+    return updateLead(id, { lead_status });
+  };
+
   const getLeadsByStage = (stage: LeadStage) => {
     return leads.filter((lead) => lead.stage === stage);
+  };
+
+  const getLeadsByStatus = (status: LeadStatus) => {
+    return leads.filter((lead) => lead.lead_status === status);
   };
 
   const stats = {
@@ -191,6 +203,9 @@ export function useLeads() {
     morno: leads.filter((l) => l.stage === "morno").length,
     frio: leads.filter((l) => l.stage === "frio").length,
     budgetSent: leads.filter((l) => l.budget_sent).length,
+    leads: leads.filter((l) => l.lead_status === "lead").length,
+    clientes: leads.filter((l) => l.lead_status === "cliente").length,
+    perdidos: leads.filter((l) => l.lead_status === "perdido").length,
   };
 
   return {
@@ -200,7 +215,9 @@ export function useLeads() {
     updateLead,
     deleteLead,
     updateStage,
+    updateLeadStatus,
     getLeadsByStage,
+    getLeadsByStatus,
     stats,
     refetch: fetchLeads,
   };
