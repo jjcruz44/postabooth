@@ -4,11 +4,13 @@ import {
   CalendarDays, Sparkles, Loader2, Target, 
   RefreshCw, CheckCircle2, Users, BookOpen, 
   Tag, Eye, MessageSquare, Lock, Calendar,
-  MoreVertical, EyeOff, Trash2, ChevronDown, ChevronUp
+  MoreVertical, EyeOff, Trash2, ChevronDown, ChevronUp,
+  CalendarPlus, ArrowRight
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -25,7 +27,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { useCalendarPlanner, CalendarDay } from "@/hooks/useCalendarPlanner";
+import { useCalendarPlanner, CalendarDay, TargetMonth } from "@/hooks/useCalendarPlanner";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { DayContentModal } from "./DayContentModal";
@@ -80,7 +82,7 @@ export function PlannerView() {
     setModalOpen(true);
   };
 
-  const handleGenerate = async () => {
+  const handleGenerate = async (targetMonth: TargetMonth = 'current') => {
     if (!filters.monthObjective) {
       toast({
         title: "Objetivo necessário",
@@ -100,10 +102,11 @@ export function PlannerView() {
     }
 
     try {
-      await generateCalendar(filters);
+      await generateCalendar(filters, targetMonth);
+      const monthLabel = targetMonth === 'next' ? 'próximo mês' : 'restante do mês';
       toast({
         title: "Calendário gerado!",
-        description: `Seu planejamento com ${filters.postingDays.length} dias por semana está pronto.`,
+        description: `Seu planejamento para ${monthLabel} está pronto.`,
       });
     } catch (err) {
       toast({
@@ -167,6 +170,12 @@ export function PlannerView() {
 
   const getCurrentMonthName = () => {
     const date = new Date();
+    return date.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+  };
+
+  const getNextMonthName = () => {
+    const date = new Date();
+    date.setMonth(date.getMonth() + 1);
     return date.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
   };
 
@@ -345,6 +354,22 @@ export function PlannerView() {
                   </SelectContent>
                 </Select>
               </div>
+
+              {/* Start from Tomorrow Toggle */}
+              <div className="flex items-center justify-between p-3 rounded-lg border border-border bg-muted/30">
+                <div className="space-y-0.5">
+                  <Label className="text-sm font-medium">Começar a partir de amanhã</Label>
+                  <p className="text-xs text-muted-foreground">
+                    {filters.startFromTomorrow 
+                      ? "O planejamento começa amanhã" 
+                      : "Inclui hoje se for um dia selecionado"}
+                  </p>
+                </div>
+                <Switch
+                  checked={filters.startFromTomorrow}
+                  onCheckedChange={(checked) => updateFilters({ startFromTomorrow: checked })}
+                />
+              </div>
             </div>
 
             {/* Distribution Preview */}
@@ -365,25 +390,46 @@ export function PlannerView() {
               </div>
             </div>
 
-            {/* Generate Button */}
-            <Button
-              size="lg"
-              onClick={handleGenerate}
-              disabled={loading || !filters.monthObjective || filters.postingDays.length === 0}
-              className="w-full gap-2 h-12 md:h-14 text-base md:text-lg"
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                  Gerando calendário...
-                </>
-              ) : (
-                <>
-                  <Sparkles className="w-5 h-5" />
-                  Gerar planejamento
-                </>
-              )}
-            </Button>
+            {/* Generate Buttons */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <Button
+                size="lg"
+                onClick={() => handleGenerate('current')}
+                disabled={loading || !filters.monthObjective || filters.postingDays.length === 0}
+                className="gap-2 h-12 md:h-14 text-sm md:text-base"
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    Gerando...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-5 h-5" />
+                    Gerar para o restante do mês
+                  </>
+                )}
+              </Button>
+              <Button
+                size="lg"
+                variant="outline"
+                onClick={() => handleGenerate('next')}
+                disabled={loading || !filters.monthObjective || filters.postingDays.length === 0}
+                className="gap-2 h-12 md:h-14 text-sm md:text-base"
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    Gerando...
+                  </>
+                ) : (
+                  <>
+                    <CalendarPlus className="w-5 h-5" />
+                    Gerar para {getNextMonthName()}
+                  </>
+                )}
+              </Button>
+            </div>
 
             {error && (
               <div className="p-3 md:p-4 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-sm">

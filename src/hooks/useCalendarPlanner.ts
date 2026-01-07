@@ -20,7 +20,10 @@ export interface PlannerFilters {
   postingDays: string[];
   contentFocus: string;
   monthObjective: string;
+  startFromTomorrow: boolean;
 }
+
+export type TargetMonth = 'current' | 'next';
 
 interface MonthlyPlanner {
   id: string;
@@ -39,6 +42,7 @@ const DEFAULT_FILTERS: PlannerFilters = {
   postingDays: ["segunda", "quarta", "sexta"],
   contentFocus: "Aleatório",
   monthObjective: "",
+  startFromTomorrow: false,
 };
 
 export function useCalendarPlanner() {
@@ -77,6 +81,7 @@ export function useCalendarPlanner() {
             postingDays: plannerData.posting_days || ["segunda", "quarta", "sexta"],
             contentFocus: plannerData.content_focus || "Aleatório",
             monthObjective: plannerData.month_objective || plannerData.monthly_goal || "",
+            startFromTomorrow: false,
           });
           setPlannerId(plannerData.id);
         }
@@ -109,7 +114,7 @@ export function useCalendarPlanner() {
     }
   }, [plannerId]);
 
-  const generateCalendar = useCallback(async (newFilters: PlannerFilters) => {
+  const generateCalendar = useCallback(async (newFilters: PlannerFilters, targetMonth: TargetMonth = 'current') => {
     if (!user) {
       throw new Error("Você precisa estar logado para gerar o calendário");
     }
@@ -145,6 +150,8 @@ export function useCalendarPlanner() {
             postingDays: newFilters.postingDays,
             contentFocus: newFilters.contentFocus,
             monthObjective: newFilters.monthObjective,
+            targetMonth,
+            startFromTomorrow: newFilters.startFromTomorrow,
           }),
         }
       );
