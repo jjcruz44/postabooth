@@ -21,6 +21,7 @@ export type Database = {
           event_id: string
           id: string
           phase: string
+          position: number
           text: string
           updated_at: string
           user_id: string
@@ -31,6 +32,7 @@ export type Database = {
           event_id: string
           id?: string
           phase: string
+          position?: number
           text: string
           updated_at?: string
           user_id: string
@@ -41,6 +43,7 @@ export type Database = {
           event_id?: string
           id?: string
           phase?: string
+          position?: number
           text?: string
           updated_at?: string
           user_id?: string

@@ -14,7 +14,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { Plus, Trash2, ChevronDown, Calendar } from "lucide-react";
+import { Plus, Trash2, ChevronDown, Calendar, ChevronUp } from "lucide-react";
 import { Event, useChecklistItems, ChecklistItem } from "@/hooks/useEvents";
 import { cn } from "@/lib/utils";
 
@@ -35,7 +35,7 @@ export const EventChecklistModal = ({
   open,
   onOpenChange,
 }: EventChecklistModalProps) => {
-  const { items, loading, addItem, updateItem, deleteItem, toggleItem } =
+  const { items, loading, addItem, updateItem, deleteItem, toggleItem, moveItem } =
     useChecklistItems(event?.id || null);
 
   const completedCount = items.filter((i) => i.completed).length;
@@ -80,17 +80,23 @@ export const EventChecklistModal = ({
           </div>
         ) : (
           <div className="space-y-4">
-            {phases.map((phase) => (
-              <PhaseSection
-                key={phase.key}
-                phase={phase}
-                items={items.filter((i) => i.phase === phase.key)}
-                onAddItem={(text) => addItem(phase.key, text)}
-                onToggleItem={toggleItem}
-                onUpdateItem={updateItem}
-                onDeleteItem={deleteItem}
-              />
-            ))}
+            {phases.map((phase) => {
+              const phaseItems = items
+                .filter((i) => i.phase === phase.key)
+                .sort((a, b) => a.position - b.position);
+              return (
+                <PhaseSection
+                  key={phase.key}
+                  phase={phase}
+                  items={phaseItems}
+                  onAddItem={(text) => addItem(phase.key, text)}
+                  onToggleItem={toggleItem}
+                  onUpdateItem={updateItem}
+                  onDeleteItem={deleteItem}
+                  onMoveItem={moveItem}
+                />
+              );
+            })}
           </div>
         )}
       </DialogContent>
@@ -105,6 +111,7 @@ interface PhaseSectionProps {
   onToggleItem: (itemId: string) => Promise<boolean>;
   onUpdateItem: (itemId: string, updates: { text?: string }) => Promise<boolean>;
   onDeleteItem: (itemId: string) => Promise<boolean>;
+  onMoveItem: (itemId: string, direction: "up" | "down") => Promise<boolean>;
 }
 
 const PhaseSection = ({
@@ -114,6 +121,7 @@ const PhaseSection = ({
   onToggleItem,
   onUpdateItem,
   onDeleteItem,
+  onMoveItem,
 }: PhaseSectionProps) => {
   const [isOpen, setIsOpen] = useState(true);
   const [newItemText, setNewItemText] = useState("");
@@ -161,13 +169,17 @@ const PhaseSection = ({
 
       <CollapsibleContent className="px-4 pb-4">
         <div className="space-y-2 mb-3">
-          {items.map((item) => (
+          {items.map((item, index) => (
             <ChecklistItemRow
               key={item.id}
               item={item}
               onToggle={() => onToggleItem(item.id)}
               onUpdate={(text) => onUpdateItem(item.id, { text })}
               onDelete={() => onDeleteItem(item.id)}
+              onMoveUp={() => onMoveItem(item.id, "up")}
+              onMoveDown={() => onMoveItem(item.id, "down")}
+              isFirst={index === 0}
+              isLast={index === items.length - 1}
             />
           ))}
         </div>
@@ -198,6 +210,10 @@ interface ChecklistItemRowProps {
   onToggle: () => void;
   onUpdate: (text: string) => void;
   onDelete: () => void;
+  onMoveUp: () => void;
+  onMoveDown: () => void;
+  isFirst: boolean;
+  isLast: boolean;
 }
 
 const ChecklistItemRow = ({
@@ -205,6 +221,10 @@ const ChecklistItemRow = ({
   onToggle,
   onUpdate,
   onDelete,
+  onMoveUp,
+  onMoveDown,
+  isFirst,
+  isLast,
 }: ChecklistItemRowProps) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editText, setEditText] = useState(item.text);
@@ -254,14 +274,34 @@ const ChecklistItemRow = ({
         </span>
       )}
 
-      <Button
-        variant="ghost"
-        size="icon"
-        className="h-8 w-8 opacity-0 group-hover:opacity-100 text-destructive hover:text-destructive"
-        onClick={onDelete}
-      >
-        <Trash2 className="h-4 w-4" />
-      </Button>
+      <div className="flex items-center gap-1">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8 opacity-0 group-hover:opacity-100"
+          onClick={onMoveUp}
+          disabled={isFirst}
+        >
+          <ChevronUp className="h-4 w-4" />
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8 opacity-0 group-hover:opacity-100"
+          onClick={onMoveDown}
+          disabled={isLast}
+        >
+          <ChevronDown className="h-4 w-4" />
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8 opacity-0 group-hover:opacity-100 text-destructive hover:text-destructive"
+          onClick={onDelete}
+        >
+          <Trash2 className="h-4 w-4" />
+        </Button>
+      </div>
     </div>
   );
 };
