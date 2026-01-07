@@ -6,7 +6,7 @@ import {
   Menu, X, Users, ClipboardList
 } from "lucide-react";
 import { useNavigate, Link } from "react-router-dom";
-import clickarLogo from "@/assets/postabooth-logo.png";
+import clickarLogo from "@/assets/clickar-logo.png";
 import { useContentsDB, ContentItem } from "@/hooks/useContentsDB";
 import { useAuth } from "@/contexts/AuthContext";
 import { useProfile } from "@/hooks/useProfile";
