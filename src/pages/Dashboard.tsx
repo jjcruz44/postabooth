@@ -41,9 +41,9 @@ const Dashboard = () => {
 
   const navItems = [
     { id: "planejamento" as const, label: "Planejamento", icon: CalendarDays, premium: true },
-    { id: "meu-calendario" as const, label: "Meu Calendário", icon: Calendar, premium: false },
     { id: "gerador" as const, label: "Gerador de Posts", icon: Sparkles, premium: false },
-    { id: "leads" as const, label: "Leads", icon: Users, premium: false },
+    { id: "meu-calendario" as const, label: "Meu Calendário", icon: Calendar, premium: false },
+    { id: "leads" as const, label: "Meus Leads", icon: Users, premium: false },
     { id: "checklists" as const, label: "Checklists", icon: ClipboardList, premium: false },
   ];
 
