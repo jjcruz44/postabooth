@@ -3,13 +3,29 @@ import { motion, AnimatePresence } from "framer-motion";
 import { 
   CalendarDays, Sparkles, Loader2, Target, 
   RefreshCw, CheckCircle2, Users, BookOpen, 
-  Tag, Eye, MessageSquare, Lock, Calendar
+  Tag, Eye, MessageSquare, Lock, Calendar,
+  MoreVertical, EyeOff, Trash2, ChevronDown, ChevronUp
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useCalendarPlanner, CalendarDay, PlannerFilters } from "@/hooks/useCalendarPlanner";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { useCalendarPlanner, CalendarDay } from "@/hooks/useCalendarPlanner";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { DayContentModal } from "./DayContentModal";
@@ -47,14 +63,17 @@ const MONTH_OBJECTIVES = [
   { value: "Promover ofertas ou diferenciais", label: "Promover ofertas ou diferenciais" },
 ];
 
-const FREQUENCY_OPTIONS = [1, 2, 3, 4, 5, 6];
-
 export function PlannerView() {
-  const { calendar, filters, loading, initialLoading, error, generateCalendar, clearCalendar, updateFilters } = useCalendarPlanner();
+  const { 
+    calendar, visiblePosts, hiddenPosts, filters, loading, initialLoading, error, 
+    generateCalendar, clearCalendar, updateFilters, hidePost, showPost, deletePost 
+  } = useCalendarPlanner();
   const { isPremiumUser } = useAuth();
   const { toast } = useToast();
   const [selectedDay, setSelectedDay] = useState<CalendarDay | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
+  const [showHiddenPosts, setShowHiddenPosts] = useState(false);
+  const [deleteConfirmIndex, setDeleteConfirmIndex] = useState<number | null>(null);
 
   const handleDayClick = (day: CalendarDay) => {
     setSelectedDay(day);
@@ -106,9 +125,41 @@ export function PlannerView() {
     clearCalendar();
   };
 
+  const handleHidePost = async (index: number, e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      await hidePost(index);
+      toast({ title: "Post ocultado", description: "Você pode reexibi-lo na seção de ocultos." });
+    } catch {
+      toast({ title: "Erro ao ocultar", variant: "destructive" });
+    }
+  };
+
+  const handleShowPost = async (index: number, e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      await showPost(index);
+      toast({ title: "Post restaurado" });
+    } catch {
+      toast({ title: "Erro ao restaurar", variant: "destructive" });
+    }
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (deleteConfirmIndex === null) return;
+    try {
+      await deletePost(deleteConfirmIndex);
+      toast({ title: "Post excluído permanentemente" });
+    } catch {
+      toast({ title: "Erro ao excluir", variant: "destructive" });
+    } finally {
+      setDeleteConfirmIndex(null);
+    }
+  };
+
   const getCategoryStats = () => {
     const stats: Record<string, number> = {};
-    calendar.forEach((day) => {
+    visiblePosts.forEach((day) => {
       stats[day.category] = (stats[day.category] || 0) + 1;
     });
     return stats;
@@ -380,18 +431,29 @@ export function PlannerView() {
             {/* Calendar Header */}
             <div className="bg-card rounded-xl border border-border overflow-hidden">
               <div className="p-3 md:p-4 border-b border-border bg-muted/30">
-                <div className="flex items-center gap-2 text-foreground font-medium text-sm md:text-base">
-                  <CheckCircle2 className="w-4 h-4 md:w-5 md:h-5 text-success" />
-                  {calendar.length} posts programados
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="flex items-center gap-2 text-foreground font-medium text-sm md:text-base">
+                      <CheckCircle2 className="w-4 h-4 md:w-5 md:h-5 text-success" />
+                      {visiblePosts.length} post{visiblePosts.length !== 1 ? 's' : ''} ativos
+                    </div>
+                    <p className="text-xs md:text-sm text-muted-foreground mt-1">
+                      Objetivo: {filters.monthObjective} • Foco: {filters.contentFocus}
+                    </p>
+                  </div>
+                  {hiddenPosts.length > 0 && (
+                    <span className="text-xs text-muted-foreground">
+                      {hiddenPosts.length} oculto{hiddenPosts.length !== 1 ? 's' : ''}
+                    </span>
+                  )}
                 </div>
-                <p className="text-xs md:text-sm text-muted-foreground mt-1">
-                  Objetivo: {filters.monthObjective} • Foco: {filters.contentFocus}
-                </p>
               </div>
 
-              {/* Calendar List */}
+              {/* Calendar List - Visible Posts */}
               <div className="divide-y divide-border max-h-[450px] md:max-h-[600px] overflow-y-auto">
                 {calendar.map((day, index) => {
+                  if (day.hidden) return null;
+                  
                   const config = categoryConfig[day.category] || categoryConfig["prova social"];
                   const Icon = config.icon;
                   
@@ -401,15 +463,20 @@ export function PlannerView() {
                       initial={{ opacity: 0, x: -10 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: index * 0.02 }}
-                      onClick={() => handleDayClick(day)}
-                      className="p-3 md:p-4 transition-colors cursor-pointer hover:bg-muted/30"
+                      className="p-3 md:p-4 transition-colors hover:bg-muted/30 group"
                     >
                       <div className="flex items-start gap-3 md:gap-4">
-                        <div className="w-12 h-12 md:w-14 md:h-14 rounded-lg gradient-primary flex flex-col items-center justify-center text-primary-foreground shrink-0">
+                        <div 
+                          onClick={() => handleDayClick(day)}
+                          className="w-12 h-12 md:w-14 md:h-14 rounded-lg gradient-primary flex flex-col items-center justify-center text-primary-foreground shrink-0 cursor-pointer"
+                        >
                           <span className="text-lg md:text-xl font-bold leading-none">{day.day}</span>
                           <span className="text-[10px] md:text-xs opacity-80">{day.weekday}</span>
                         </div>
-                        <div className="flex-1 min-w-0">
+                        <div 
+                          className="flex-1 min-w-0 cursor-pointer"
+                          onClick={() => handleDayClick(day)}
+                        >
                           <div className="flex items-center gap-2 mb-1 flex-wrap">
                             <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border ${config.color}`}>
                               <Icon className="w-3 h-3" />
@@ -423,12 +490,133 @@ export function PlannerView() {
                             {day.idea}
                           </p>
                         </div>
+                        
+                        {/* Action Menu */}
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <MoreVertical className="w-4 h-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={(e) => handleHidePost(index, e as unknown as React.MouseEvent)}>
+                              <EyeOff className="w-4 h-4 mr-2" />
+                              Ocultar post
+                            </DropdownMenuItem>
+                            <DropdownMenuItem 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setDeleteConfirmIndex(index);
+                              }}
+                              className="text-destructive focus:text-destructive"
+                            >
+                              <Trash2 className="w-4 h-4 mr-2" />
+                              Excluir definitivamente
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </div>
                     </motion.div>
                   );
                 })}
               </div>
             </div>
+
+            {/* Hidden Posts Section */}
+            {hiddenPosts.length > 0 && (
+              <div className="bg-card rounded-xl border border-border overflow-hidden">
+                <button
+                  onClick={() => setShowHiddenPosts(!showHiddenPosts)}
+                  className="w-full p-3 md:p-4 flex items-center justify-between hover:bg-muted/30 transition-colors"
+                >
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <EyeOff className="w-4 h-4" />
+                    <span className="text-sm font-medium">
+                      {hiddenPosts.length} post{hiddenPosts.length !== 1 ? 's' : ''} oculto{hiddenPosts.length !== 1 ? 's' : ''}
+                    </span>
+                  </div>
+                  {showHiddenPosts ? (
+                    <ChevronUp className="w-4 h-4 text-muted-foreground" />
+                  ) : (
+                    <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                  )}
+                </button>
+
+                <AnimatePresence>
+                  {showHiddenPosts && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: "auto", opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      className="divide-y divide-border border-t border-border overflow-hidden"
+                    >
+                      {calendar.map((day, index) => {
+                        if (!day.hidden) return null;
+                        
+                        const config = categoryConfig[day.category] || categoryConfig["prova social"];
+                        const Icon = config.icon;
+                        
+                        return (
+                          <div
+                            key={`hidden-${day.day}-${index}`}
+                            className="p-3 md:p-4 bg-muted/20 group"
+                          >
+                            <div className="flex items-start gap-3 md:gap-4">
+                              <div className="w-12 h-12 md:w-14 md:h-14 rounded-lg bg-muted flex flex-col items-center justify-center text-muted-foreground shrink-0">
+                                <span className="text-lg md:text-xl font-bold leading-none">{day.day}</span>
+                                <span className="text-[10px] md:text-xs opacity-80">{day.weekday}</span>
+                              </div>
+                              <div className="flex-1 min-w-0 opacity-60">
+                                <div className="flex items-center gap-2 mb-1 flex-wrap">
+                                  <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border ${config.color}`}>
+                                    <Icon className="w-3 h-3" />
+                                    <span className="hidden sm:inline">{config.label}</span>
+                                  </span>
+                                </div>
+                                <p className="text-foreground font-medium text-sm md:text-base line-clamp-1">
+                                  {day.title || day.idea}
+                                </p>
+                              </div>
+                              
+                              {/* Action Menu for Hidden Posts */}
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button 
+                                    variant="ghost" 
+                                    size="icon" 
+                                    className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+                                  >
+                                    <MoreVertical className="w-4 h-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuItem onClick={(e) => handleShowPost(index, e as unknown as React.MouseEvent)}>
+                                    <Eye className="w-4 h-4 mr-2" />
+                                    Exibir post
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem 
+                                    onClick={() => setDeleteConfirmIndex(index)}
+                                    className="text-destructive focus:text-destructive"
+                                  >
+                                    <Trash2 className="w-4 h-4 mr-2" />
+                                    Excluir definitivamente
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            )}
           </motion.div>
         )}
       </AnimatePresence>
@@ -439,6 +627,27 @@ export function PlannerView() {
         onOpenChange={setModalOpen}
         day={selectedDay}
       />
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteConfirmIndex !== null} onOpenChange={() => setDeleteConfirmIndex(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir post definitivamente?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Essa ação não pode ser desfeita. O post será removido permanentemente do seu planejamento.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleDeleteConfirm}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
