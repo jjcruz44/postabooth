@@ -20,6 +20,7 @@ export interface ChecklistItem {
   phase: "pre" | "during" | "post";
   text: string;
   completed: boolean;
+  position: number;
   created_at: string;
   updated_at: string;
 }
@@ -189,7 +190,7 @@ export const useChecklistItems = (eventId: string | null) => {
         .select("*")
         .eq("event_id", eventId)
         .eq("user_id", user.id)
-        .order("created_at", { ascending: true });
+        .order("position", { ascending: true });
 
       if (error) throw error;
       setItems((data || []) as ChecklistItem[]);
@@ -211,6 +212,12 @@ export const useChecklistItems = (eventId: string | null) => {
   const addItem = async (phase: "pre" | "during" | "post", text: string) => {
     if (!user || !eventId) return null;
 
+    // Calculate next position for this phase
+    const phaseItems = items.filter((i) => i.phase === phase);
+    const nextPosition = phaseItems.length > 0 
+      ? Math.max(...phaseItems.map((i) => i.position)) + 1 
+      : 0;
+
     try {
       const { data, error } = await supabase
         .from("checklist_items")
@@ -220,6 +227,7 @@ export const useChecklistItems = (eventId: string | null) => {
           phase,
           text,
           completed: false,
+          position: nextPosition,
         })
         .select()
         .single();
@@ -297,6 +305,51 @@ export const useChecklistItems = (eventId: string | null) => {
     return updateItem(itemId, { completed: !item.completed });
   };
 
+  const moveItem = async (itemId: string, direction: "up" | "down") => {
+    const item = items.find((i) => i.id === itemId);
+    if (!item || !user) return false;
+
+    const phaseItems = items
+      .filter((i) => i.phase === item.phase)
+      .sort((a, b) => a.position - b.position);
+    
+    const currentIndex = phaseItems.findIndex((i) => i.id === itemId);
+    const targetIndex = direction === "up" ? currentIndex - 1 : currentIndex + 1;
+
+    if (targetIndex < 0 || targetIndex >= phaseItems.length) return false;
+
+    const targetItem = phaseItems[targetIndex];
+
+    try {
+      // Swap positions
+      await supabase
+        .from("checklist_items")
+        .update({ position: targetItem.position })
+        .eq("id", item.id)
+        .eq("user_id", user.id);
+
+      await supabase
+        .from("checklist_items")
+        .update({ position: item.position })
+        .eq("id", targetItem.id)
+        .eq("user_id", user.id);
+
+      // Update local state
+      setItems((prev) =>
+        prev.map((i) => {
+          if (i.id === item.id) return { ...i, position: targetItem.position };
+          if (i.id === targetItem.id) return { ...i, position: item.position };
+          return i;
+        })
+      );
+
+      return true;
+    } catch (error) {
+      console.error("Error moving checklist item:", error);
+      return false;
+    }
+  };
+
   return {
     items,
     loading,
@@ -304,6 +357,7 @@ export const useChecklistItems = (eventId: string | null) => {
     updateItem,
     deleteItem,
     toggleItem,
+    moveItem,
     refetch: fetchItems,
   };
 };
