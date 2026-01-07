@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Menu, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "react-router-dom";
-import clickarLogo from "@/assets/postabooth-logo.png";
+import clickarLogo from "@/assets/clickar-logo.png";
 
 export const Header = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
