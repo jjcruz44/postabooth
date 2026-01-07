@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { 
   Settings, LogOut, ChevronLeft, ChevronRight, Search, 
   Sparkles, Loader2, CalendarDays, Calendar,
-  Menu, X, Users
+  Menu, X, Users, ClipboardList
 } from "lucide-react";
 import { useNavigate, Link } from "react-router-dom";
 import postaboothLogo from "@/assets/postabooth-logo.png";
@@ -14,6 +14,7 @@ import { GeneratorView } from "@/components/dashboard/GeneratorView";
 import { PlannerView } from "@/components/dashboard/PlannerView";
 import { MyCalendarView } from "@/components/dashboard/MyCalendarView";
 import { LeadsView } from "@/components/dashboard/LeadsView";
+import { ChecklistsView } from "@/components/dashboard/ChecklistsView";
 import { ContentDetailModal } from "@/components/dashboard/ContentDetailModal";
 import { useToast } from "@/hooks/use-toast";
 import { ContentSuggestion } from "@/hooks/useContentSuggestions";
@@ -22,7 +23,7 @@ import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { ShareButton } from "@/components/dashboard/ShareButton";
 
-type ViewType = "planejamento" | "gerador" | "meu-calendario" | "leads";
+type ViewType = "planejamento" | "gerador" | "meu-calendario" | "leads" | "checklists";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -43,6 +44,7 @@ const Dashboard = () => {
     { id: "meu-calendario" as const, label: "Meu Calendário", icon: Calendar, premium: false },
     { id: "gerador" as const, label: "Gerador de Posts", icon: Sparkles, premium: false },
     { id: "leads" as const, label: "Leads", icon: Users, premium: false },
+    { id: "checklists" as const, label: "Checklists", icon: ClipboardList, premium: false },
   ];
 
   const handleSaveContent = async (content: {
@@ -315,6 +317,9 @@ const Dashboard = () => {
           )}
           {activeView === "leads" && (
             <LeadsView />
+          )}
+          {activeView === "checklists" && (
+            <ChecklistsView />
           )}
         </main>
       </div>
