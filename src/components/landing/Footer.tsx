@@ -11,10 +11,10 @@ export const Footer = () => {
               <div className="w-8 h-8 rounded-lg gradient-primary flex items-center justify-center">
                 <Camera className="w-4 h-4 text-primary-foreground" />
               </div>
-              <span className="font-bold text-lg">PostaBooth</span>
+              <span className="font-bold text-lg">CLICKAR</span>
             </div>
             <p className="text-background/60 text-sm mb-4">
-              Marketing inteligente para profissionais de cabines e totens fotográficos.
+              Organização e controle para empresas de foto, totem e cabine de eventos.
             </p>
             <div className="flex gap-3">
               <a
@@ -71,7 +71,7 @@ export const Footer = () => {
 
         {/* Bottom */}
         <div className="pt-8 border-t border-background/10 text-center text-sm text-background/40">
-          <p>© 2024 PostaBooth. Todos os direitos reservados.</p>
+          <p>© 2025 CLICKAR. Todos os direitos reservados.</p>
         </div>
       </div>
     </footer>

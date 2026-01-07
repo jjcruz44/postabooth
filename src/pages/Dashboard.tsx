@@ -6,7 +6,7 @@ import {
   Menu, X, Users, ClipboardList
 } from "lucide-react";
 import { useNavigate, Link } from "react-router-dom";
-import postaboothLogo from "@/assets/postabooth-logo.png";
+import clickarLogo from "@/assets/postabooth-logo.png";
 import { useContentsDB, ContentItem } from "@/hooks/useContentsDB";
 import { useAuth } from "@/contexts/AuthContext";
 import { useProfile } from "@/hooks/useProfile";
@@ -109,12 +109,12 @@ const Dashboard = () => {
         onClick={() => isSheet && setMobileMenuOpen(false)}
       >
         <img 
-          src={postaboothLogo} 
-          alt="PostaBooth" 
+          src={clickarLogo} 
+          alt="CLICKAR" 
           className="w-9 h-9 rounded-xl object-contain shrink-0"
         />
         <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="font-bold text-lg text-sidebar-foreground">
-          PostaBooth
+          CLICKAR
         </motion.span>
       </Link>
 
@@ -184,13 +184,13 @@ const Dashboard = () => {
         >
           <Link to="/" className="h-16 flex items-center gap-3 px-4 border-b border-sidebar-border hover:bg-sidebar-accent/30 transition-colors">
             <img 
-              src={postaboothLogo} 
-              alt="PostaBooth" 
+              src={clickarLogo} 
+              alt="CLICKAR" 
               className="w-9 h-9 rounded-xl object-contain shrink-0"
             />
             {sidebarOpen && (
               <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="font-bold text-lg text-sidebar-foreground">
-                PostaBooth
+                CLICKAR
               </motion.span>
             )}
           </Link>
@@ -268,9 +268,9 @@ const Dashboard = () => {
             <Button variant="ghost" size="sm" className="sm:hidden w-8 h-8 p-0" onClick={() => {
               if (navigator.share) {
                 navigator.share({
-                  title: "Postabooth",
-                  text: "Conheci o Postabooth: ele cria um calendário de posts pronto para empresas de cabine/totem fecharem mais eventos.",
-                  url: "https://postabooth.lovable.app/",
+                  title: "CLICKAR",
+                  text: "Conheci o CLICKAR: ferramenta de organização e controle para empresas de foto, cabine e totem em eventos.",
+                  url: "https://clickar.lovable.app/",
                 });
               }
             }}>

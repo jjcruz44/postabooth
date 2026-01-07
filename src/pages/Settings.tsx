@@ -356,11 +356,11 @@ const Settings = () => {
                   </div>
                   <div className="space-y-3">
                     <a
-                      href="mailto:suporte@postabooth.com"
+                      href="mailto:suporte@clickar.app"
                       className="block p-4 rounded-lg border border-border hover:bg-muted transition-colors"
                     >
                       <p className="font-medium text-foreground">Email de suporte</p>
-                      <p className="text-sm text-muted-foreground">suporte@postabooth.com</p>
+                      <p className="text-sm text-muted-foreground">suporte@clickar.app</p>
                     </a>
                   </div>
                 </div>

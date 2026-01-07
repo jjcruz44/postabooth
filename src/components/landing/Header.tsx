@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Menu, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "react-router-dom";
-import postaboothLogo from "@/assets/postabooth-logo.png";
+import clickarLogo from "@/assets/postabooth-logo.png";
 
 export const Header = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -21,11 +21,11 @@ export const Header = () => {
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2">
             <img 
-              src={postaboothLogo} 
-              alt="PostaBooth" 
+              src={clickarLogo} 
+              alt="CLICKAR" 
               className="w-9 h-9 rounded-xl object-contain"
             />
-            <span className="font-bold text-xl text-foreground">PostaBooth</span>
+            <span className="font-bold text-xl text-foreground">CLICKAR</span>
           </Link>
 
           {/* Desktop nav */}
