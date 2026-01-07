@@ -12,6 +12,7 @@ export interface CalendarDay {
   title: string;
   roteiro: string;
   legenda: string;
+  hidden?: boolean;
 }
 
 export interface PlannerFilters {
@@ -88,6 +89,25 @@ export function useCalendarPlanner() {
 
     loadPlanner();
   }, [user]);
+
+  // Save calendar to database
+  const saveCalendar = useCallback(async (newCalendar: CalendarDay[]) => {
+    if (!plannerId) return;
+
+    try {
+      const { error: updateError } = await supabase
+        .from("monthly_planners")
+        .update({
+          calendar_data: newCalendar as unknown as never,
+        })
+        .eq("id", plannerId);
+
+      if (updateError) throw updateError;
+    } catch (err) {
+      console.error("Error saving calendar:", err);
+      throw err;
+    }
+  }, [plannerId]);
 
   const generateCalendar = useCallback(async (newFilters: PlannerFilters) => {
     if (!user) {
@@ -183,6 +203,28 @@ export function useCalendarPlanner() {
     }
   }, [user, plannerId]);
 
+  const hidePost = useCallback(async (dayIndex: number) => {
+    const newCalendar = calendar.map((day, idx) => 
+      idx === dayIndex ? { ...day, hidden: true } : day
+    );
+    setCalendar(newCalendar);
+    await saveCalendar(newCalendar);
+  }, [calendar, saveCalendar]);
+
+  const showPost = useCallback(async (dayIndex: number) => {
+    const newCalendar = calendar.map((day, idx) => 
+      idx === dayIndex ? { ...day, hidden: false } : day
+    );
+    setCalendar(newCalendar);
+    await saveCalendar(newCalendar);
+  }, [calendar, saveCalendar]);
+
+  const deletePost = useCallback(async (dayIndex: number) => {
+    const newCalendar = calendar.filter((_, idx) => idx !== dayIndex);
+    setCalendar(newCalendar);
+    await saveCalendar(newCalendar);
+  }, [calendar, saveCalendar]);
+
   const clearCalendar = useCallback(() => {
     setCalendar([]);
     setFilters(DEFAULT_FILTERS);
@@ -193,8 +235,14 @@ export function useCalendarPlanner() {
     setFilters(prev => ({ ...prev, ...newFilters }));
   }, []);
 
+  // Computed values
+  const visiblePosts = calendar.filter(day => !day.hidden);
+  const hiddenPosts = calendar.filter(day => day.hidden);
+
   return {
     calendar,
+    visiblePosts,
+    hiddenPosts,
     filters,
     loading,
     initialLoading,
@@ -202,5 +250,8 @@ export function useCalendarPlanner() {
     generateCalendar,
     clearCalendar,
     updateFilters,
+    hidePost,
+    showPost,
+    deletePost,
   };
 }
