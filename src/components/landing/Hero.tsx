@@ -141,7 +141,7 @@ export const Hero = () => {
               </div>
               <div className="flex-1 flex justify-center">
                 <div className="bg-background rounded-md px-4 py-1 text-xs text-muted-foreground">
-                  postabooth.com.br/dashboard
+                  clickar.lovable.app/dashboard
                 </div>
               </div>
             </div>

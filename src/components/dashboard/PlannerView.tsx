@@ -465,7 +465,7 @@ export function PlannerView() {
             <div className="bg-gradient-to-r from-primary/10 to-primary/5 rounded-xl border border-primary/20 p-4 md:p-5 flex flex-col sm:flex-row items-center justify-between gap-3">
               <div className="text-center sm:text-left">
                 <p className="text-sm md:text-base font-medium text-foreground">
-                  Gostou do Postabooth?
+                  Gostou do CLICKAR?
                 </p>
                 <p className="text-xs md:text-sm text-muted-foreground">
                   Compartilhe com outros donos de cabine/totem!

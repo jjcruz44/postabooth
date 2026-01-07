@@ -121,7 +121,7 @@ const Onboarding = () => {
 
       toast({
         title: "Perfil configurado!",
-        description: "Agora você está pronto para usar o PostaBooth.",
+        description: "Agora você está pronto para usar o CLICKAR.",
       });
 
       navigate("/dashboard");
@@ -154,7 +154,7 @@ const Onboarding = () => {
             <div className="w-9 h-9 rounded-xl gradient-primary flex items-center justify-center">
               <Camera className="w-5 h-5 text-primary-foreground" />
             </div>
-            <span className="font-bold text-xl text-foreground">PostaBooth</span>
+            <span className="font-bold text-xl text-foreground">CLICKAR</span>
           </div>
           <div className="text-sm text-muted-foreground">
             Passo {step} de {totalSteps}

@@ -9,9 +9,9 @@ import {
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 
-const SHARE_URL = "https://postabooth.lovable.app/";
-const SHARE_TITLE = "Postabooth";
-const SHARE_TEXT = "Conheci o Postabooth: ele cria um calendário de posts pronto para empresas de cabine/totem fecharem mais eventos.";
+const SHARE_URL = "https://clickar.lovable.app/";
+const SHARE_TITLE = "CLICKAR";
+const SHARE_TEXT = "Conheci o CLICKAR: ferramenta de organização e controle para empresas de foto, cabine e totem em eventos.";
 const SHARE_MESSAGE = `${SHARE_TEXT} Testa aqui: ${SHARE_URL}`;
 
 interface ShareButtonProps {
@@ -42,7 +42,7 @@ export function ShareButton({
         });
         toast({
           title: "Compartilhado!",
-          description: "Obrigado por compartilhar o Postabooth.",
+          description: "Obrigado por compartilhar o CLICKAR.",
         });
       } catch (err) {
         // User cancelled or error - fallback to modal
@@ -110,7 +110,7 @@ export function ShareButton({
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Share2 className="w-5 h-5 text-primary" />
-              Compartilhar Postabooth
+              Compartilhar CLICKAR
             </DialogTitle>
           </DialogHeader>
 
