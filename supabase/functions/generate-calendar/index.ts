@@ -7,7 +7,10 @@ const corsHeaders = {
 };
 
 interface CalendarRequest {
-  monthlyGoal: string;
+  postingFrequency: number;
+  postingDays: string[];
+  contentFocus: string;
+  monthObjective: string;
 }
 
 interface UserProfile {
@@ -19,10 +22,35 @@ interface UserProfile {
 
 interface CalendarDay {
   day: number;
+  weekday: string;
+  date: string;
   category: string;
   objective: string;
   idea: string;
+  title: string;
+  roteiro: string;
+  legenda: string;
 }
+
+const WEEKDAY_MAP: Record<string, number> = {
+  "domingo": 0,
+  "segunda": 1,
+  "terça": 2,
+  "quarta": 3,
+  "quinta": 4,
+  "sexta": 5,
+  "sábado": 6,
+};
+
+const WEEKDAY_NAMES: Record<number, string> = {
+  0: "Domingo",
+  1: "Segunda",
+  2: "Terça",
+  3: "Quarta",
+  4: "Quinta",
+  5: "Sexta",
+  6: "Sábado",
+};
 
 async function getUserProfile(supabaseUrl: string, supabaseServiceKey: string, userId: string): Promise<UserProfile | null> {
   const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
@@ -38,6 +66,31 @@ async function getUserProfile(supabaseUrl: string, supabaseServiceKey: string, u
     return null;
   }
   return data as UserProfile | null;
+}
+
+function getPostingDatesForMonth(postingDays: string[]): { day: number; weekday: string; date: string }[] {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  
+  const selectedWeekdays = postingDays.map(d => WEEKDAY_MAP[d.toLowerCase()]).filter(d => d !== undefined);
+  const result: { day: number; weekday: string; date: string }[] = [];
+  
+  for (let day = 1; day <= daysInMonth; day++) {
+    const date = new Date(year, month, day);
+    const weekday = date.getDay();
+    
+    if (selectedWeekdays.includes(weekday)) {
+      result.push({
+        day,
+        weekday: WEEKDAY_NAMES[weekday],
+        date: date.toISOString().split('T')[0],
+      });
+    }
+  }
+  
+  return result;
 }
 
 serve(async (req) => {
@@ -69,7 +122,7 @@ serve(async (req) => {
       });
     }
 
-    const { monthlyGoal } = await req.json() as CalendarRequest;
+    const { postingFrequency, postingDays, contentFocus, monthObjective } = await req.json() as CalendarRequest;
     
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const userProfile = await getUserProfile(supabaseUrl, supabaseServiceKey, user.id);
@@ -79,56 +132,83 @@ serve(async (req) => {
     const mainAudience = userProfile?.events?.join(', ') || 'casamentos, festas corporativas, aniversários';
     const brandStyle = userProfile?.brand_style || 'profissional e acessível';
     
-    console.log('Generating calendar for user:', user.id, { monthlyGoal, businessType, city });
+    // Calculate posting dates for the current month
+    const postingDates = getPostingDatesForMonth(postingDays);
+    const totalPosts = postingDates.length;
+    
+    console.log('Generating calendar for user:', user.id, { 
+      monthObjective, 
+      contentFocus, 
+      postingFrequency, 
+      postingDays,
+      totalPosts 
+    });
 
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
     if (!LOVABLE_API_KEY) {
       throw new Error('LOVABLE_API_KEY is not configured');
     }
 
+    const postingDatesInfo = postingDates.map(d => `Dia ${d.day} (${d.weekday})`).join(', ');
+
     const systemPrompt = `Você é um estrategista de conteúdo para redes sociais especializado em pequenos negócios de eventos (cabines fotográficas, totens, plataformas 360).
 
-Crie um calendário de 30 dias com ideias CURTAS, CLARAS e EXECUTÁVEIS.
+Crie um calendário de conteúdo personalizado com base nos filtros do usuário.
 
 Informações do negócio:
 - Tipo: ${businessType}
 - Cidade: ${city}
 - Público: ${mainAudience}
-- Meta do mês: ${monthlyGoal}
 - Tom: ${brandStyle}
 
+Filtros do planejamento:
+- OBJETIVO DO MÊS: ${monthObjective}
+- Foco de conteúdo: ${contentFocus === 'Aleatório' ? 'Mix de eventos (casamento, corporativo, aniversários)' : contentFocus}
+- Total de posts: ${totalPosts}
+- Datas para postar: ${postingDatesInfo}
+
 REGRAS OBRIGATÓRIAS:
-1. Crie EXATAMENTE 30 dias de conteúdo
-2. Use esta distribuição:
-   - 30% prova social (9 dias)
-   - 20% educativo (6 dias)
-   - 20% oferta (6 dias)
-   - 15% bastidores (5 dias)
-   - 15% storytelling (4 dias)
 
-3. Cada dia deve ter:
-   - Número do dia
-   - Categoria do conteúdo
-   - Objetivo alinhado à meta mensal (1 frase curta)
-   - Ideia principal (1 frase clara e específica)
+1. Crie EXATAMENTE ${totalPosts} posts, um para cada data listada acima.
 
-4. As ideias devem ser:
-   - Específicas para o nicho de eventos
-   - Curtas e fáceis de entender
-   - Executáveis sem explicações adicionais
+2. Cada post DEVE seguir este formato obrigatório com 4 blocos:
+   - title: Título curto e organizacional (máx 10 palavras)
+   - idea: Ideia principal em UMA frase clara alinhada ao objetivo do mês
+   - roteiro: UM ÚNICO roteiro prático e direto (máx 100 palavras, sem variações ou alternativas)
+   - legenda: Legenda curta pronta para postar (MÁXIMO 4 linhas, com no máximo 1 CTA)
+
+3. Todos os posts devem estar alinhados ao OBJETIVO DO MÊS: "${monthObjective}"
+
+4. Use esta distribuição de categorias proporcionalmente:
+   - 30% prova social
+   - 20% educativo
+   - 20% oferta
+   - 15% bastidores
+   - 15% storytelling
 
 5. NÃO incluir hashtags em nenhum momento
-6. Escreva tudo em português brasileiro
+6. NÃO gerar textos longos
+7. NÃO criar múltiplas ideias por post
+8. Escreva tudo em português brasileiro
 
-RETORNE um JSON array com EXATAMENTE 30 objetos:
-{
-  "day": 1,
-  "category": "prova social",
-  "objective": "Gerar credibilidade",
-  "idea": "Postar foto do último casamento com comentário da noiva"
-}
+RETORNE um JSON array com EXATAMENTE ${totalPosts} objetos neste formato:
+[
+  {
+    "day": 3,
+    "weekday": "Segunda",
+    "date": "2026-01-03",
+    "category": "prova social",
+    "objective": "Gerar credibilidade mostrando resultados reais",
+    "title": "Depoimento da noiva Marina",
+    "idea": "Compartilhar feedback da noiva sobre como a cabine animou os convidados",
+    "roteiro": "Abrir com foto do casamento. Mostrar momento da cabine. Inserir áudio ou texto do depoimento. Fechar com call-to-action.",
+    "legenda": "A Marina disse que a cabine foi o hit da festa! 📸\\n\\nQuer isso no seu casamento? Me chama no direct!"
+  }
+]
 
-Categorias em português:
+Os dias e datas devem corresponder EXATAMENTE a: ${JSON.stringify(postingDates)}
+
+Categorias válidas:
 - "prova social"
 - "educativo"
 - "oferta"
@@ -137,7 +217,10 @@ Categorias em português:
 
 Retorne APENAS o JSON array, sem markdown.`;
 
-    const userPrompt = `Gere o calendário de 30 dias agora. Meta do mês: "${monthlyGoal}"`;
+    const userPrompt = `Gere o calendário de conteúdo agora para o mês atual.
+Objetivo do mês: "${monthObjective}"
+Foco: ${contentFocus}
+Datas para postar: ${JSON.stringify(postingDates)}`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -192,8 +275,12 @@ Retorne APENAS o JSON array, sem markdown.`;
       const cleanContent = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
       parsedContent = JSON.parse(cleanContent);
       
-      if (!Array.isArray(parsedContent) || parsedContent.length !== 30) {
-        throw new Error("Invalid calendar format");
+      if (!Array.isArray(parsedContent) || parsedContent.length !== totalPosts) {
+        console.warn(`Expected ${totalPosts} posts, got ${parsedContent.length}`);
+        // Accept partial results if close enough
+        if (!Array.isArray(parsedContent) || parsedContent.length < 1) {
+          throw new Error("Invalid calendar format");
+        }
       }
     } catch (parseError) {
       console.error("Failed to parse AI response:", content);

@@ -226,25 +226,37 @@ export type Database = {
       monthly_planners: {
         Row: {
           calendar_data: Json
+          content_focus: string | null
           created_at: string
           id: string
+          month_objective: string | null
           monthly_goal: string
+          posting_days: string[] | null
+          posting_frequency: number | null
           updated_at: string
           user_id: string
         }
         Insert: {
           calendar_data: Json
+          content_focus?: string | null
           created_at?: string
           id?: string
+          month_objective?: string | null
           monthly_goal: string
+          posting_days?: string[] | null
+          posting_frequency?: number | null
           updated_at?: string
           user_id: string
         }
         Update: {
           calendar_data?: Json
+          content_focus?: string | null
           created_at?: string
           id?: string
+          month_objective?: string | null
           monthly_goal?: string
+          posting_days?: string[] | null
+          posting_frequency?: number | null
           updated_at?: string
           user_id?: string
         }

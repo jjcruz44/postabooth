@@ -4,23 +4,46 @@ import { useAuth } from "@/contexts/AuthContext";
 
 export interface CalendarDay {
   day: number;
+  weekday: string;
+  date: string;
   category: string;
   objective: string;
   idea: string;
+  title: string;
+  roteiro: string;
+  legenda: string;
+}
+
+export interface PlannerFilters {
+  postingFrequency: number;
+  postingDays: string[];
+  contentFocus: string;
+  monthObjective: string;
 }
 
 interface MonthlyPlanner {
   id: string;
   monthly_goal: string;
   calendar_data: CalendarDay[];
+  posting_frequency: number;
+  posting_days: string[];
+  content_focus: string;
+  month_objective: string;
   created_at: string;
   updated_at: string;
 }
 
+const DEFAULT_FILTERS: PlannerFilters = {
+  postingFrequency: 3,
+  postingDays: ["segunda", "quarta", "sexta"],
+  contentFocus: "Aleatório",
+  monthObjective: "",
+};
+
 export function useCalendarPlanner() {
   const { user } = useAuth();
   const [calendar, setCalendar] = useState<CalendarDay[]>([]);
-  const [monthlyGoal, setMonthlyGoal] = useState("");
+  const [filters, setFilters] = useState<PlannerFilters>(DEFAULT_FILTERS);
   const [plannerId, setPlannerId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
@@ -47,8 +70,13 @@ export function useCalendarPlanner() {
 
         if (data) {
           const plannerData = data as unknown as MonthlyPlanner;
-          setCalendar(plannerData.calendar_data);
-          setMonthlyGoal(plannerData.monthly_goal);
+          setCalendar(plannerData.calendar_data || []);
+          setFilters({
+            postingFrequency: plannerData.posting_frequency || 3,
+            postingDays: plannerData.posting_days || ["segunda", "quarta", "sexta"],
+            contentFocus: plannerData.content_focus || "Aleatório",
+            monthObjective: plannerData.month_objective || plannerData.monthly_goal || "",
+          });
           setPlannerId(plannerData.id);
         }
       } catch (err) {
@@ -61,9 +89,17 @@ export function useCalendarPlanner() {
     loadPlanner();
   }, [user]);
 
-  const generateCalendar = useCallback(async (goal: string) => {
+  const generateCalendar = useCallback(async (newFilters: PlannerFilters) => {
     if (!user) {
       throw new Error("Você precisa estar logado para gerar o calendário");
+    }
+
+    if (!newFilters.monthObjective.trim()) {
+      throw new Error("O objetivo do mês é obrigatório");
+    }
+
+    if (newFilters.postingDays.length === 0) {
+      throw new Error("Selecione pelo menos um dia da semana");
     }
 
     setLoading(true);
@@ -84,7 +120,12 @@ export function useCalendarPlanner() {
             "Content-Type": "application/json",
             "Authorization": `Bearer ${session.access_token}`,
           },
-          body: JSON.stringify({ monthlyGoal: goal }),
+          body: JSON.stringify({
+            postingFrequency: newFilters.postingFrequency,
+            postingDays: newFilters.postingDays,
+            contentFocus: newFilters.contentFocus,
+            monthObjective: newFilters.monthObjective,
+          }),
         }
       );
 
@@ -98,24 +139,30 @@ export function useCalendarPlanner() {
 
       // Save to database
       if (plannerId) {
-        // Update existing planner
         const { error: updateError } = await supabase
           .from("monthly_planners")
           .update({
-            monthly_goal: goal,
+            monthly_goal: newFilters.monthObjective,
             calendar_data: newCalendar as unknown as never,
+            posting_frequency: newFilters.postingFrequency,
+            posting_days: newFilters.postingDays,
+            content_focus: newFilters.contentFocus,
+            month_objective: newFilters.monthObjective,
           })
           .eq("id", plannerId);
 
         if (updateError) throw updateError;
       } else {
-        // Create new planner
         const { data: newPlanner, error: insertError } = await supabase
           .from("monthly_planners")
           .insert([{
             user_id: user.id,
-            monthly_goal: goal,
+            monthly_goal: newFilters.monthObjective,
             calendar_data: newCalendar as unknown as never,
+            posting_frequency: newFilters.postingFrequency,
+            posting_days: newFilters.postingDays,
+            content_focus: newFilters.contentFocus,
+            month_objective: newFilters.monthObjective,
           }])
           .select()
           .single();
@@ -125,7 +172,7 @@ export function useCalendarPlanner() {
       }
 
       setCalendar(newCalendar);
-      setMonthlyGoal(goal);
+      setFilters(newFilters);
       return newCalendar;
     } catch (err) {
       const message = err instanceof Error ? err.message : "Erro desconhecido";
@@ -138,18 +185,22 @@ export function useCalendarPlanner() {
 
   const clearCalendar = useCallback(() => {
     setCalendar([]);
-    setMonthlyGoal("");
+    setFilters(DEFAULT_FILTERS);
     setError(null);
-    // Keep plannerId so we can update when generating new calendar
+  }, []);
+
+  const updateFilters = useCallback((newFilters: Partial<PlannerFilters>) => {
+    setFilters(prev => ({ ...prev, ...newFilters }));
   }, []);
 
   return {
     calendar,
-    monthlyGoal,
+    filters,
     loading,
     initialLoading,
     error,
     generateCalendar,
     clearCalendar,
+    updateFilters,
   };
 }

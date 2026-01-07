@@ -1,13 +1,15 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   CalendarDays, Sparkles, Loader2, Target, 
   RefreshCw, CheckCircle2, Users, BookOpen, 
-  Tag, Eye, MessageSquare, Lock 
+  Tag, Eye, MessageSquare, Lock, Calendar
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { useCalendarPlanner, CalendarDay } from "@/hooks/useCalendarPlanner";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useCalendarPlanner, CalendarDay, PlannerFilters } from "@/hooks/useCalendarPlanner";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { DayContentModal } from "./DayContentModal";
@@ -21,21 +23,36 @@ const categoryConfig: Record<string, { icon: React.ElementType; color: string; l
   "storytelling": { icon: MessageSquare, color: "bg-pink-500/10 text-pink-500 border-pink-500/20", label: "Storytelling" },
 };
 
-const goalSuggestions = [
-  "Aumentar pedidos de orçamento para casamentos",
-  "Divulgar nova cabine 360",
-  "Fechar eventos corporativos de fim de ano",
-  "Gerar autoridade como especialista em eventos",
-  "Promover pacotes promocionais de aniversários",
+const WEEKDAYS = [
+  { id: "segunda", label: "Seg" },
+  { id: "terça", label: "Ter" },
+  { id: "quarta", label: "Qua" },
+  { id: "quinta", label: "Qui" },
+  { id: "sexta", label: "Sex" },
+  { id: "sábado", label: "Sáb" },
 ];
 
-const FREE_DAYS_LIMIT = 3;
+const CONTENT_FOCUS_OPTIONS = [
+  { value: "Aleatório", label: "Mix de eventos" },
+  { value: "Casamento", label: "Casamento" },
+  { value: "Corporativo", label: "Corporativo" },
+  { value: "15 anos / Aniversário", label: "15 anos / Aniversário" },
+];
+
+const MONTH_OBJECTIVES = [
+  { value: "Fechar mais eventos", label: "Fechar mais eventos" },
+  { value: "Gerar prova social", label: "Gerar prova social" },
+  { value: "Aumentar autoridade", label: "Aumentar autoridade" },
+  { value: "Educar e tirar dúvidas", label: "Educar e tirar dúvidas" },
+  { value: "Promover ofertas ou diferenciais", label: "Promover ofertas ou diferenciais" },
+];
+
+const FREQUENCY_OPTIONS = [1, 2, 3, 4, 5, 6];
 
 export function PlannerView() {
-  const { calendar, monthlyGoal: savedGoal, loading, initialLoading, error, generateCalendar, clearCalendar } = useCalendarPlanner();
+  const { calendar, filters, loading, initialLoading, error, generateCalendar, clearCalendar, updateFilters } = useCalendarPlanner();
   const { isPremiumUser } = useAuth();
   const { toast } = useToast();
-  const [goalInput, setGoalInput] = useState("");
   const [selectedDay, setSelectedDay] = useState<CalendarDay | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
 
@@ -44,28 +61,30 @@ export function PlannerView() {
     setModalOpen(true);
   };
 
-  // Sync goal input with saved goal when loaded
-  useEffect(() => {
-    if (savedGoal && !goalInput) {
-      setGoalInput(savedGoal);
-    }
-  }, [savedGoal]);
-
   const handleGenerate = async () => {
-    if (!goalInput.trim()) {
+    if (!filters.monthObjective) {
       toast({
         title: "Objetivo necessário",
-        description: "Defina o objetivo principal do mês para gerar o calendário.",
+        description: "Selecione o objetivo principal do mês.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (filters.postingDays.length === 0) {
+      toast({
+        title: "Dias necessários",
+        description: "Selecione pelo menos um dia da semana para postar.",
         variant: "destructive",
       });
       return;
     }
 
     try {
-      await generateCalendar(goalInput);
+      await generateCalendar(filters);
       toast({
         title: "Calendário gerado!",
-        description: "Seu planejamento de 30 dias está pronto.",
+        description: `Seu planejamento com ${filters.postingDays.length} dias por semana está pronto.`,
       });
     } catch (err) {
       toast({
@@ -76,13 +95,15 @@ export function PlannerView() {
     }
   };
 
-  const handleSelectGoal = (goal: string) => {
-    setGoalInput(goal);
+  const handleWeekdayToggle = (weekday: string) => {
+    const newDays = filters.postingDays.includes(weekday)
+      ? filters.postingDays.filter(d => d !== weekday)
+      : [...filters.postingDays, weekday];
+    updateFilters({ postingDays: newDays });
   };
 
   const handleNewCalendar = () => {
     clearCalendar();
-    setGoalInput("");
   };
 
   const getCategoryStats = () => {
@@ -93,11 +114,15 @@ export function PlannerView() {
     return stats;
   };
 
+  const getCurrentMonthName = () => {
+    const date = new Date();
+    return date.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+  };
+
   // Show premium paywall for free users
   if (!isPremiumUser) {
     return (
       <div className="space-y-4 md:space-y-6">
-        {/* Header */}
         <div>
           <h2 className="text-xl md:text-2xl font-bold text-foreground flex items-center gap-2">
             <CalendarDays className="w-6 h-6 md:w-7 md:h-7 text-primary" />
@@ -107,11 +132,10 @@ export function PlannerView() {
             </span>
           </h2>
           <p className="text-sm md:text-base text-muted-foreground mt-1">
-            Gere um calendário estratégico de 30 dias para suas redes sociais
+            Crie um calendário personalizado baseado na sua rotina
           </p>
         </div>
 
-        {/* Premium Paywall */}
         <div className="bg-card rounded-xl border border-border p-8 md:p-12 text-center">
           <div className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-warning/10 flex items-center justify-center mx-auto mb-4 md:mb-6">
             <Lock className="w-8 h-8 md:w-10 md:h-10 text-warning" />
@@ -120,25 +144,25 @@ export function PlannerView() {
             Recurso exclusivo para assinantes Premium
           </h3>
           <p className="text-sm md:text-base text-muted-foreground mb-6 max-w-lg mx-auto">
-            O Planejamento Mensal utiliza inteligência artificial para criar um calendário editorial 
-            personalizado de 30 dias, com estratégias otimizadas para o seu negócio de eventos.
+            O Planejamento Mensal cria um calendário personalizado baseado na sua rotina e objetivo do mês, 
+            gerando apenas os posts que você realmente precisa.
           </p>
           
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4 mb-6 max-w-2xl mx-auto text-left">
             <div className="p-3 md:p-4 rounded-lg border border-border bg-muted/30">
+              <Calendar className="w-5 h-5 text-primary mb-2" />
+              <p className="text-sm font-medium text-foreground">Frequência flexível</p>
+              <p className="text-xs text-muted-foreground">Escolha quantos dias por semana postar</p>
+            </div>
+            <div className="p-3 md:p-4 rounded-lg border border-border bg-muted/30">
               <Target className="w-5 h-5 text-primary mb-2" />
-              <p className="text-sm font-medium text-foreground">Calendário de 30 dias</p>
-              <p className="text-xs text-muted-foreground">Posts planejados estrategicamente</p>
+              <p className="text-sm font-medium text-foreground">Objetivo focado</p>
+              <p className="text-xs text-muted-foreground">Todos os posts alinhados à sua meta</p>
             </div>
             <div className="p-3 md:p-4 rounded-lg border border-border bg-muted/30">
               <Sparkles className="w-5 h-5 text-primary mb-2" />
-              <p className="text-sm font-medium text-foreground">Conteúdo por IA</p>
-              <p className="text-xs text-muted-foreground">Legendas e ideias geradas automaticamente</p>
-            </div>
-            <div className="p-3 md:p-4 rounded-lg border border-border bg-muted/30">
-              <Users className="w-5 h-5 text-primary mb-2" />
-              <p className="text-sm font-medium text-foreground">Categorias estratégicas</p>
-              <p className="text-xs text-muted-foreground">Prova social, educativo, ofertas e mais</p>
+              <p className="text-sm font-medium text-foreground">Conteúdo completo</p>
+              <p className="text-xs text-muted-foreground">Roteiro e legenda prontos para usar</p>
             </div>
           </div>
 
@@ -163,8 +187,8 @@ export function PlannerView() {
               Premium
             </span>
           </h2>
-          <p className="text-sm md:text-base text-muted-foreground mt-1">
-            Gere um calendário estratégico de 30 dias para suas redes sociais
+          <p className="text-sm md:text-base text-muted-foreground mt-1 capitalize">
+            {getCurrentMonthName()}
           </p>
         </div>
         {calendar.length > 0 && (
@@ -194,37 +218,81 @@ export function PlannerView() {
             exit={{ opacity: 0, y: -20 }}
             className="space-y-4 md:space-y-6"
           >
-            {/* Goal Input */}
-            <div className="bg-card rounded-xl border border-border p-4 md:p-6 space-y-4">
-              <div className="flex items-center gap-2 text-foreground font-medium">
+            {/* Filters Card */}
+            <div className="bg-card rounded-xl border border-border p-4 md:p-6 space-y-5">
+              <h3 className="font-semibold text-foreground flex items-center gap-2">
                 <Target className="w-5 h-5 text-primary" />
-                Qual é o objetivo principal do mês?
-              </div>
-              
-              <Textarea
-                value={goalInput}
-                onChange={(e) => setGoalInput(e.target.value)}
-                placeholder="Ex: Aumentar pedidos de orçamento para casamentos"
-                className="min-h-20 md:min-h-24 resize-none"
-              />
+                Configure seu planejamento
+              </h3>
 
+              {/* Month Objective - Required */}
               <div className="space-y-2">
-                <p className="text-sm text-muted-foreground">Sugestões:</p>
+                <Label className="text-sm font-medium">
+                  Objetivo do mês <span className="text-destructive">*</span>
+                </Label>
+                <Select 
+                  value={filters.monthObjective} 
+                  onValueChange={(value) => updateFilters({ monthObjective: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione o objetivo principal" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {MONTH_OBJECTIVES.map((obj) => (
+                      <SelectItem key={obj.value} value={obj.value}>
+                        {obj.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  Este objetivo irá orientar o tom e a ideia de todos os posts
+                </p>
+              </div>
+
+              {/* Posting Days */}
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">
+                  Dias da semana para postar <span className="text-destructive">*</span>
+                </Label>
                 <div className="flex flex-wrap gap-2">
-                  {goalSuggestions.map((goal) => (
+                  {WEEKDAYS.map((day) => (
                     <button
-                      key={goal}
-                      onClick={() => handleSelectGoal(goal)}
-                      className={`px-3 py-1.5 text-xs md:text-sm rounded-full border transition-all ${
-                        goalInput === goal
+                      key={day.id}
+                      onClick={() => handleWeekdayToggle(day.id)}
+                      className={`px-3 py-2 text-sm rounded-lg border transition-all ${
+                        filters.postingDays.includes(day.id)
                           ? "bg-primary text-primary-foreground border-primary"
                           : "bg-muted/50 text-muted-foreground border-border hover:border-primary/50"
                       }`}
                     >
-                      {goal}
+                      {day.label}
                     </button>
                   ))}
                 </div>
+                <p className="text-xs text-muted-foreground">
+                  {filters.postingDays.length} dia{filters.postingDays.length !== 1 ? 's' : ''} selecionado{filters.postingDays.length !== 1 ? 's' : ''}
+                </p>
+              </div>
+
+              {/* Content Focus */}
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Foco do conteúdo</Label>
+                <Select 
+                  value={filters.contentFocus} 
+                  onValueChange={(value) => updateFilters({ contentFocus: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {CONTENT_FOCUS_OPTIONS.map((opt) => (
+                      <SelectItem key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 
@@ -250,7 +318,7 @@ export function PlannerView() {
             <Button
               size="lg"
               onClick={handleGenerate}
-              disabled={loading || !goalInput.trim()}
+              disabled={loading || !filters.monthObjective || filters.postingDays.length === 0}
               className="w-full gap-2 h-12 md:h-14 text-base md:text-lg"
             >
               {loading ? (
@@ -261,7 +329,7 @@ export function PlannerView() {
               ) : (
                 <>
                   <Sparkles className="w-5 h-5" />
-                  Gerar calendário de 30 dias
+                  Gerar planejamento
                 </>
               )}
             </Button>
@@ -296,7 +364,7 @@ export function PlannerView() {
               })}
             </div>
 
-            {/* Share CTA after success */}
+            {/* Share CTA */}
             <div className="bg-gradient-to-r from-primary/10 to-primary/5 rounded-xl border border-primary/20 p-4 md:p-5 flex flex-col sm:flex-row items-center justify-between gap-3">
               <div className="text-center sm:text-left">
                 <p className="text-sm md:text-base font-medium text-foreground">
@@ -309,44 +377,37 @@ export function PlannerView() {
               <ShareButton variant="default" className="shrink-0" />
             </div>
 
-            {/* Calendar Grid */}
+            {/* Calendar Header */}
             <div className="bg-card rounded-xl border border-border overflow-hidden">
               <div className="p-3 md:p-4 border-b border-border bg-muted/30">
                 <div className="flex items-center gap-2 text-foreground font-medium text-sm md:text-base">
                   <CheckCircle2 className="w-4 h-4 md:w-5 md:h-5 text-success" />
-                  Calendário gerado com sucesso
+                  {calendar.length} posts programados
                 </div>
-                <p className="text-xs md:text-sm text-muted-foreground mt-1 line-clamp-2">
-                  Objetivo: {savedGoal}
+                <p className="text-xs md:text-sm text-muted-foreground mt-1">
+                  Objetivo: {filters.monthObjective} • Foco: {filters.contentFocus}
                 </p>
               </div>
 
+              {/* Calendar List */}
               <div className="divide-y divide-border max-h-[450px] md:max-h-[600px] overflow-y-auto">
                 {calendar.map((day, index) => {
                   const config = categoryConfig[day.category] || categoryConfig["prova social"];
                   const Icon = config.icon;
-                  const isLocked = !isPremiumUser && day.day > FREE_DAYS_LIMIT;
                   
                   return (
                     <motion.div
-                      key={day.day}
+                      key={`${day.day}-${index}`}
                       initial={{ opacity: 0, x: -10 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: index * 0.02 }}
                       onClick={() => handleDayClick(day)}
-                      className={`p-3 md:p-4 transition-colors cursor-pointer ${
-                        isLocked 
-                          ? "hover:bg-muted/20 opacity-60" 
-                          : "hover:bg-muted/30"
-                      }`}
+                      className="p-3 md:p-4 transition-colors cursor-pointer hover:bg-muted/30"
                     >
                       <div className="flex items-start gap-3 md:gap-4">
-                        <div className={`w-10 h-10 md:w-12 md:h-12 rounded-lg flex items-center justify-center font-bold text-base md:text-lg shrink-0 ${
-                          isLocked 
-                            ? "bg-muted text-muted-foreground" 
-                            : "gradient-primary text-primary-foreground"
-                        }`}>
-                          {isLocked ? <Lock className="w-4 h-4 md:w-5 md:h-5" /> : day.day}
+                        <div className="w-12 h-12 md:w-14 md:h-14 rounded-lg gradient-primary flex flex-col items-center justify-center text-primary-foreground shrink-0">
+                          <span className="text-lg md:text-xl font-bold leading-none">{day.day}</span>
+                          <span className="text-[10px] md:text-xs opacity-80">{day.weekday}</span>
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1 flex-wrap">
@@ -354,13 +415,12 @@ export function PlannerView() {
                               <Icon className="w-3 h-3" />
                               <span className="hidden sm:inline">{config.label}</span>
                             </span>
-                            {isLocked && (
-                              <span className="text-xs text-warning font-medium">Premium</span>
-                            )}
                           </div>
-                          <p className="text-foreground font-medium text-sm md:text-base line-clamp-2">{day.idea}</p>
-                          <p className="text-xs md:text-sm text-muted-foreground mt-1 line-clamp-1">
-                            {day.objective}
+                          <p className="text-foreground font-medium text-sm md:text-base line-clamp-1">
+                            {day.title || day.idea}
+                          </p>
+                          <p className="text-xs md:text-sm text-muted-foreground mt-0.5 line-clamp-2">
+                            {day.idea}
                           </p>
                         </div>
                       </div>
