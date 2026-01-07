@@ -11,6 +11,8 @@ interface CalendarRequest {
   postingDays: string[];
   contentFocus: string;
   monthObjective: string;
+  targetMonth?: 'current' | 'next';
+  startFromTomorrow?: boolean;
 }
 
 interface UserProfile {
@@ -68,16 +70,39 @@ async function getUserProfile(supabaseUrl: string, supabaseServiceKey: string, u
   return data as UserProfile | null;
 }
 
-function getPostingDatesForMonth(postingDays: string[]): { day: number; weekday: string; date: string }[] {
+function getPostingDatesForMonth(
+  postingDays: string[], 
+  targetMonth: 'current' | 'next' = 'current',
+  startFromTomorrow: boolean = false
+): { day: number; weekday: string; date: string; monthName: string; year: number }[] {
   const now = new Date();
-  const year = now.getFullYear();
-  const month = now.getMonth();
+  const today = now.getDate();
+  
+  let year = now.getFullYear();
+  let month = now.getMonth();
+  
+  // If targeting next month
+  if (targetMonth === 'next') {
+    month = month + 1;
+    if (month > 11) {
+      month = 0;
+      year = year + 1;
+    }
+  }
+  
   const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const monthName = new Date(year, month, 1).toLocaleDateString('pt-BR', { month: 'long' });
   
   const selectedWeekdays = postingDays.map(d => WEEKDAY_MAP[d.toLowerCase()]).filter(d => d !== undefined);
-  const result: { day: number; weekday: string; date: string }[] = [];
+  const result: { day: number; weekday: string; date: string; monthName: string; year: number }[] = [];
   
-  for (let day = 1; day <= daysInMonth; day++) {
+  // Determine start day
+  let startDay = 1;
+  if (targetMonth === 'current') {
+    startDay = startFromTomorrow ? today + 1 : today;
+  }
+  
+  for (let day = startDay; day <= daysInMonth; day++) {
     const date = new Date(year, month, day);
     const weekday = date.getDay();
     
@@ -86,6 +111,8 @@ function getPostingDatesForMonth(postingDays: string[]): { day: number; weekday:
         day,
         weekday: WEEKDAY_NAMES[weekday],
         date: date.toISOString().split('T')[0],
+        monthName,
+        year,
       });
     }
   }
@@ -122,7 +149,7 @@ serve(async (req) => {
       });
     }
 
-    const { postingFrequency, postingDays, contentFocus, monthObjective } = await req.json() as CalendarRequest;
+    const { postingFrequency, postingDays, contentFocus, monthObjective, targetMonth = 'current', startFromTomorrow = false } = await req.json() as CalendarRequest;
     
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const userProfile = await getUserProfile(supabaseUrl, supabaseServiceKey, user.id);
@@ -132,16 +159,29 @@ serve(async (req) => {
     const mainAudience = userProfile?.events?.join(', ') || 'casamentos, festas corporativas, aniversários';
     const brandStyle = userProfile?.brand_style || 'profissional e acessível';
     
-    // Calculate posting dates for the current month
-    const postingDates = getPostingDatesForMonth(postingDays);
+    // Calculate posting dates based on target month
+    const postingDates = getPostingDatesForMonth(postingDays, targetMonth, startFromTomorrow);
     const totalPosts = postingDates.length;
+    
+    if (totalPosts === 0) {
+      return new Response(JSON.stringify({ error: 'Não há dias disponíveis para postar no período selecionado.' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    
+    const monthInfo = postingDates[0];
+    const monthLabel = targetMonth === 'next' ? 'próximo mês' : 'restante do mês';
     
     console.log('Generating calendar for user:', user.id, { 
       monthObjective, 
       contentFocus, 
       postingFrequency, 
       postingDays,
-      totalPosts 
+      totalPosts,
+      targetMonth,
+      startFromTomorrow,
+      monthName: monthInfo?.monthName
     });
 
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
@@ -217,7 +257,7 @@ Categorias válidas:
 
 Retorne APENAS o JSON array, sem markdown.`;
 
-    const userPrompt = `Gere o calendário de conteúdo agora para o mês atual.
+    const userPrompt = `Gere o calendário de conteúdo para ${monthLabel} (${monthInfo?.monthName} ${monthInfo?.year}).
 Objetivo do mês: "${monthObjective}"
 Foco: ${contentFocus}
 Datas para postar: ${JSON.stringify(postingDates)}`;
