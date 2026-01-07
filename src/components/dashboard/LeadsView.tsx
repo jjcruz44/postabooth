@@ -53,7 +53,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
-import { useLeads, Lead, LeadStage, LeadInput } from "@/hooks/useLeads";
+import { useLeads, Lead, LeadStage, LeadStatus, LeadInput } from "@/hooks/useLeads";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { MessageTemplatesModal } from "./MessageTemplatesModal";
@@ -77,6 +77,24 @@ const stageConfig = {
     icon: Snowflake,
     color: "bg-blue-500/10 text-blue-500 border-blue-500/20",
     badgeVariant: "outline" as const,
+  },
+};
+
+const leadStatusConfig = {
+  lead: {
+    label: "Lead",
+    color: "bg-amber-500/10 text-amber-600 border-amber-500/30",
+    cardBorder: "border-l-amber-400",
+  },
+  cliente: {
+    label: "Cliente",
+    color: "bg-green-500/10 text-green-600 border-green-500/30",
+    cardBorder: "border-l-green-500",
+  },
+  perdido: {
+    label: "Perdido",
+    color: "bg-gray-400/10 text-gray-500 border-gray-400/30",
+    cardBorder: "border-l-gray-400",
   },
 };
 
@@ -107,6 +125,7 @@ const LeadForm = ({ initialData, onSubmit, onClose, isEditing }: LeadFormProps) 
     event_date: initialData?.event_date || "",
     event_city: initialData?.event_city || "",
     stage: initialData?.stage || "morno",
+    lead_status: initialData?.lead_status || "lead",
     budget_sent: initialData?.budget_sent || false,
     budget_value: initialData?.budget_value || undefined,
     packages_requested: initialData?.packages_requested || [],
@@ -345,13 +364,15 @@ interface LeadCardProps {
   onEdit: (lead: Lead) => void;
   onDelete: (lead: Lead) => void;
   onUpdateStage: (id: string, stage: LeadStage) => void;
+  onUpdateStatus: (id: string, status: LeadStatus) => void;
   onSendMessage: (lead: Lead) => void;
 }
 
-const LeadCard = ({ lead, onEdit, onDelete, onUpdateStage, onSendMessage }: LeadCardProps) => {
+const LeadCard = ({ lead, onEdit, onDelete, onUpdateStage, onUpdateStatus, onSendMessage }: LeadCardProps) => {
   const [expanded, setExpanded] = useState(false);
   const config = stageConfig[lead.stage];
   const Icon = config.icon;
+  const statusConfig = leadStatusConfig[lead.lead_status || "lead"];
 
   const openWhatsAppQuick = () => {
     if (!lead.phone) return;
@@ -368,9 +389,40 @@ const LeadCard = ({ lead, onEdit, onDelete, onUpdateStage, onSendMessage }: Lead
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
-      className="bg-card border border-border rounded-xl overflow-hidden"
+      className={`bg-card border border-border rounded-xl overflow-hidden border-l-4 ${statusConfig.cardBorder}`}
     >
       <div className="p-4">
+        {/* Status selector */}
+        <div className="flex items-center justify-between mb-3">
+          <Select
+            value={lead.lead_status || "lead"}
+            onValueChange={(value) => onUpdateStatus(lead.id, value as LeadStatus)}
+          >
+            <SelectTrigger className={`w-[120px] h-7 text-xs ${statusConfig.color}`}>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="lead">
+                <span className="flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-amber-400" />
+                  Lead
+                </span>
+              </SelectItem>
+              <SelectItem value="cliente">
+                <span className="flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-green-500" />
+                  Cliente
+                </span>
+              </SelectItem>
+              <SelectItem value="perdido">
+                <span className="flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-gray-400" />
+                  Perdido
+                </span>
+              </SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
         <div className="flex items-start justify-between gap-3">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
@@ -543,7 +595,7 @@ const LeadCard = ({ lead, onEdit, onDelete, onUpdateStage, onSendMessage }: Lead
 };
 
 export const LeadsView = () => {
-  const { leads, loading, addLead, updateLead, deleteLead, updateStage, stats } = useLeads();
+  const { leads, loading, addLead, updateLead, deleteLead, updateStage, updateLeadStatus, stats } = useLeads();
   const [filterStage, setFilterStage] = useState<LeadStage | "all">("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -747,6 +799,7 @@ export const LeadsView = () => {
                 onEdit={setEditingLead}
                 onDelete={setDeletingLead}
                 onUpdateStage={updateStage}
+                onUpdateStatus={updateLeadStatus}
                 onSendMessage={setSendingMessageLead}
               />
             ))}
