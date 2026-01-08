@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { useEvents, Event, useChecklistItems } from "@/hooks/useEvents";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { useEventPayments } from "@/hooks/useEventPayments";
 import { EventFormModal } from "./EventFormModal";
 import { EventDetailView } from "./EventDetailView";
@@ -252,19 +253,19 @@ interface EventCardProps {
 const EventCard = ({ event, onClick, onEdit, onDelete, onStatusChange }: EventCardProps) => {
   const { items } = useChecklistItems(event.id);
   const { payment, getPaymentStatus, getPendingValue } = useEventPayments(event.id);
+  const isMobile = useIsMobile();
 
   const completedCount = items.filter((i) => i.completed).length;
   const totalCount = items.length;
   const progress = totalCount > 0 ? (completedCount / totalCount) * 100 : 0;
 
-  const formattedDate = new Date(event.event_date + "T12:00:00").toLocaleDateString(
-    "pt-BR",
-    {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-    }
-  );
+  const eventDate = parseISO(event.event_date);
+  
+  // Formato compacto para mobile: "Sáb, 10 Jan 2026"
+  // Formato completo para desktop: "10 de jan. de 2026"
+  const formattedDate = isMobile
+    ? format(eventDate, "EEE, dd MMM yyyy", { locale: ptBR })
+    : format(eventDate, "dd 'de' MMM 'de' yyyy", { locale: ptBR });
 
   const status = event.status || "ativo";
   const isActive = status === "ativo";
@@ -329,8 +330,8 @@ const EventCard = ({ event, onClick, onEdit, onDelete, onStatusChange }: EventCa
       <h3 className="font-semibold text-foreground mb-1 line-clamp-2">{event.name}</h3>
 
       <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
-        <Calendar className="h-4 w-4" />
-        {formattedDate}
+        <Calendar className="h-4 w-4 shrink-0" />
+        <span className="capitalize whitespace-nowrap">{formattedDate}</span>
       </div>
 
       <div className="space-y-3">
