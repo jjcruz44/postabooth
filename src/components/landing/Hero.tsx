@@ -58,10 +58,10 @@ export const Hero = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-2 rounded-full text-sm font-medium mb-8"
+          className="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-2 rounded-full text-sm font-medium mb-8"
           >
             <Sparkles className="w-4 h-4" />
-            <span>Marketing inteligente para seu negócio de fotos</span>
+            <span>Gestão inteligente para eventos e redes sociais</span>
           </motion.div>
 
           {/* Headline */}
@@ -71,8 +71,8 @@ export const Hero = () => {
             transition={{ duration: 0.6, delay: 0.1 }}
             className="text-4xl md:text-5xl lg:text-6xl font-bold text-foreground leading-tight mb-6"
           >
-            Nunca mais fique sem saber{" "}
-            <span className="text-gradient">o que postar</span>
+            Seus eventos organizados e{" "}
+            <span className="text-gradient">conteúdo sempre pronto</span>
           </motion.h1>
 
           {/* Subheadline */}
@@ -82,8 +82,8 @@ export const Hero = () => {
             transition={{ duration: 0.6, delay: 0.2 }}
             className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-10"
           >
-            Calendário editorial, roteiros prontos e ideias estratégicas criadas 
-            especialmente para quem trabalha com cabines fotográficas, espelho mágico e totens.
+            Gerencie eventos, controle tarefas com checklists, organize seus leads 
+            e crie conteúdos para redes sociais em um só lugar.
           </motion.p>
 
           {/* CTA Buttons */}
@@ -120,7 +120,7 @@ export const Hero = () => {
               ))}
             </div>
             <span>
-              <strong className="text-foreground">+200 profissionais</strong> já organizaram seu marketing
+              <strong className="text-foreground">+200 profissionais</strong> já organizam seus eventos
             </span>
           </motion.div>
         </div>
