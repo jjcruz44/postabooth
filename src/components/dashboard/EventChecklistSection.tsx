@@ -1,12 +1,15 @@
 import { useState } from "react";
-import { ChevronDown, ChevronUp, Plus, Trash2, GripVertical, Check } from "lucide-react";
+import { ChevronDown, ChevronUp, Plus, Trash2, Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { useChecklistItems, ChecklistItem } from "@/hooks/useEvents";
+import { useChecklistItems, ChecklistItem, useEvents } from "@/hooks/useEvents";
+import { useToast } from "@/hooks/use-toast";
+import { CopyChecklistModal } from "./CopyChecklistModal";
+import { ChecklistTemplate } from "@/data/checklistTemplates";
 
 interface EventChecklistSectionProps {
   eventId: string;
@@ -21,12 +24,68 @@ const phaseConfig: Record<Phase, { label: string; description: string }> = {
 };
 
 export const EventChecklistSection = ({ eventId }: EventChecklistSectionProps) => {
-  const { items, loading, addItem, updateItem, deleteItem, toggleItem, moveItem } =
-    useChecklistItems(eventId);
+  const { toast } = useToast();
+  const { events } = useEvents();
+  const {
+    items,
+    loading,
+    addItem,
+    updateItem,
+    deleteItem,
+    toggleItem,
+    moveItem,
+    deleteAllItems,
+    addBulkItems,
+    copyFromEvent,
+  } = useChecklistItems(eventId);
+
+  const [copyModalOpen, setCopyModalOpen] = useState(false);
 
   const completedCount = items.filter((i) => i.completed).length;
   const totalCount = items.length;
   const progress = totalCount > 0 ? (completedCount / totalCount) * 100 : 0;
+
+  const handleApplyTemplate = async (
+    template: ChecklistTemplate,
+    mode: "replace" | "add"
+  ) => {
+    if (mode === "replace") {
+      await deleteAllItems();
+    }
+    const success = await addBulkItems(template.items);
+    if (success) {
+      toast({
+        title: "Template aplicado",
+        description: `${template.items.length} itens adicionados ao checklist.`,
+      });
+    }
+  };
+
+  const handleCopyFromEvent = async (
+    sourceEventId: string,
+    mode: "replace" | "add"
+  ) => {
+    const sourceItems = await copyFromEvent(sourceEventId);
+    if (!sourceItems || sourceItems.length === 0) {
+      toast({
+        title: "Aviso",
+        description: "O evento selecionado não possui itens no checklist.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (mode === "replace") {
+      await deleteAllItems();
+    }
+    const success = await addBulkItems(sourceItems);
+    if (success) {
+      toast({
+        title: "Checklist copiado",
+        description: `${sourceItems.length} itens copiados do evento anterior.`,
+      });
+    }
+  };
 
   if (loading) {
     return (
@@ -38,13 +97,24 @@ export const EventChecklistSection = ({ eventId }: EventChecklistSectionProps) =
 
   return (
     <div className="space-y-6">
-      {/* Progress summary */}
+      {/* Progress summary with copy button */}
       <Card className="p-4">
         <div className="flex items-center justify-between mb-2">
           <span className="font-medium">Progresso geral</span>
-          <span className="text-sm text-muted-foreground">
-            {completedCount} de {totalCount} itens concluídos
-          </span>
+          <div className="flex items-center gap-3">
+            <span className="text-sm text-muted-foreground">
+              {completedCount} de {totalCount} itens concluídos
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCopyModalOpen(true)}
+              className="gap-2"
+            >
+              <Copy className="h-4 w-4" />
+              Copiar checklist
+            </Button>
+          </div>
         </div>
         <Progress value={progress} className="h-2" />
       </Card>
@@ -64,6 +134,17 @@ export const EventChecklistSection = ({ eventId }: EventChecklistSectionProps) =
           />
         ))}
       </div>
+
+      {/* Copy Modal */}
+      <CopyChecklistModal
+        open={copyModalOpen}
+        onOpenChange={setCopyModalOpen}
+        currentEventId={eventId}
+        currentItemsCount={items.length}
+        events={events}
+        onApplyTemplate={handleApplyTemplate}
+        onCopyFromEvent={handleCopyFromEvent}
+      />
     </div>
   );
 };
