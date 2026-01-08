@@ -45,7 +45,7 @@ const Dashboard = () => {
     { id: "gerador" as const, label: "Gerador de Posts", icon: Sparkles, premium: false },
     { id: "meu-calendario" as const, label: "Meu Calendário", icon: Calendar, premium: false },
     { id: "leads" as const, label: "Meus Leads", icon: Users, premium: false },
-    { id: "eventos" as const, label: "Eventos", icon: PartyPopper, premium: false },
+    { id: "eventos" as const, label: "Meus Eventos", icon: PartyPopper, premium: false },
   ];
 
   const handleSaveContent = async (content: {
