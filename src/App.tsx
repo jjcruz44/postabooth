@@ -8,6 +8,7 @@ import { ProtectedRoute } from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Onboarding from "./pages/Onboarding";
+import WelcomeTour from "./pages/WelcomeTour";
 import Dashboard from "./pages/Dashboard";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
@@ -25,6 +26,14 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/login" element={<Login />} />
             <Route path="/onboarding" element={<Onboarding />} />
+            <Route
+              path="/welcome"
+              element={
+                <ProtectedRoute>
+                  <WelcomeTour />
+                </ProtectedRoute>
+              }
+            />
             <Route
               path="/dashboard"
               element={

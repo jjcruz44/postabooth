@@ -4,9 +4,10 @@ import { Loader2 } from "lucide-react";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
+  skipTourRedirect?: boolean;
 }
 
-export function ProtectedRoute({ children }: ProtectedRouteProps) {
+export function ProtectedRoute({ children, skipTourRedirect = false }: ProtectedRouteProps) {
   const { user, loading } = useAuth();
   const location = useLocation();
 
@@ -23,6 +24,14 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
 
   if (!user) {
     return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  // Check if user should see the welcome tour (first access)
+  const hideTour = localStorage.getItem("hideTour");
+  const isOnWelcomePage = location.pathname === "/welcome";
+  
+  if (!skipTourRedirect && !hideTour && !isOnWelcomePage) {
+    return <Navigate to="/welcome" replace />;
   }
 
   return <>{children}</>;
