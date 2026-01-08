@@ -4,33 +4,33 @@ import { Calendar, Lightbulb, FolderOpen, LayoutGrid, Sparkles, Users } from "lu
 const features = [
   {
     icon: Calendar,
-    title: "Calendário Editorial Automático",
-    description: "Receba um planejamento completo mensal e semanal, separado por tipo de conteúdo: Reels, Carrossel e Stories.",
+    title: "Gerenciamento de Eventos",
+    description: "Organize todos os seus eventos em um só lugar, com datas, status e informações sempre atualizadas.",
   },
   {
     icon: Lightbulb,
-    title: "Gerador de Conteúdo Guiado",
-    description: "Para cada post: ideia, roteiro, estrutura de carrossel, legenda persuasiva, CTA e hashtags segmentadas.",
+    title: "Checklists de Tarefas",
+    description: "Crie listas de tarefas para cada evento, controlando o que foi feito antes, durante e depois.",
+  },
+  {
+    icon: Users,
+    title: "Gestão de Leads",
+    description: "Acompanhe seus contatos comerciais, registre orçamentos e converta mais clientes.",
+  },
+  {
+    icon: LayoutGrid,
+    title: "Criação de Conteúdo",
+    description: "Gere posts para redes sociais com ideias, roteiros e legendas prontos para publicar.",
+  },
+  {
+    icon: Sparkles,
+    title: "Calendário Editorial",
+    description: "Planeje seu conteúdo mensal com sugestões organizadas por tipo: Reels, Carrossel e Stories.",
   },
   {
     icon: FolderOpen,
     title: "Biblioteca de Ideias",
-    description: "Conteúdos prontos organizados por categoria: autoridade, prova social, emocional e vendas.",
-  },
-  {
-    icon: LayoutGrid,
-    title: "Sistema de Organização",
-    description: "Acompanhe cada post: Ideia → Em produção → Pronto → Publicado. Tudo visual e intuitivo.",
-  },
-  {
-    icon: Sparkles,
-    title: "Adaptação por Evento",
-    description: "Escolha o tipo de evento e o sistema adapta linguagem, tom e CTAs automaticamente.",
-  },
-  {
-    icon: Users,
-    title: "Área de Leads",
-    description: "Gerencie, monitore e converse com os seus Leads, aumentando a possibilidade de conversão.",
+    description: "Acesse conteúdos prontos organizados por objetivo: autoridade, prova social e vendas.",
   },
 ];
 
@@ -56,7 +56,7 @@ export const Features = () => {
             className="text-3xl md:text-4xl font-bold text-foreground mb-4"
           >
             Tudo que você precisa para{" "}
-            <span className="text-gradient">dominar seu marketing</span>
+            <span className="text-gradient">organizar seu negócio</span>
           </motion.h2>
           <motion.p
             initial={{ opacity: 0, y: 20 }}
@@ -65,7 +65,7 @@ export const Features = () => {
             transition={{ delay: 0.2 }}
             className="text-muted-foreground text-lg"
           >
-            Ferramentas pensadas especialmente para profissionais de cabines e totens fotográficos.
+            Ferramentas integradas para gestão de eventos e criação de conteúdo digital.
           </motion.p>
         </div>
 
