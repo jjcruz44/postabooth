@@ -1,12 +1,14 @@
 import { useState } from "react";
 import { ArrowLeft, Calendar, Edit2, CheckCircle2, Clock, Clipboard, DollarSign } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Event } from "@/hooks/useEvents";
 import { EventChecklistSection } from "./EventChecklistSection";
 import { EventPaymentSection } from "./EventPaymentSection";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { format, parseISO } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 const eventTypeLabels: Record<string, string> = {
   casamento: "Casamento",
@@ -30,36 +32,35 @@ export const EventDetailView = ({
   onStatusChange,
 }: EventDetailViewProps) => {
   const [activeTab, setActiveTab] = useState("checklist");
+  const isMobile = useIsMobile();
 
   const status = event.status || "ativo";
   const isActive = status === "ativo";
 
-  const formattedDate = new Date(event.event_date + "T12:00:00").toLocaleDateString(
-    "pt-BR",
-    {
-      weekday: "long",
-      day: "2-digit",
-      month: "long",
-      year: "numeric",
-    }
-  );
+  const eventDate = parseISO(event.event_date);
+  
+  // Formato compacto para mobile: "Sáb, 10 Jan 2026"
+  // Formato completo para desktop: "sábado, 10 de janeiro de 2026"
+  const formattedDate = isMobile
+    ? format(eventDate, "EEE, dd MMM yyyy", { locale: ptBR })
+    : format(eventDate, "EEEE, dd 'de' MMMM 'de' yyyy", { locale: ptBR });
 
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex items-start gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+        <div className="flex items-start gap-3 sm:gap-4 min-w-0">
           <Button variant="ghost" size="icon" onClick={onBack} className="shrink-0">
             <ArrowLeft className="h-5 w-5" />
           </Button>
-          <div>
+          <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 mb-1 flex-wrap">
-              <span className="text-xs font-medium text-primary bg-primary/10 px-2 py-1 rounded-full">
+              <span className="text-xs font-medium text-primary bg-primary/10 px-2 py-1 rounded-full whitespace-nowrap">
                 {eventTypeLabels[event.event_type] || event.event_type}
               </span>
               <Badge
                 variant={isActive ? "outline" : "secondary"}
-                className={`text-xs ${
+                className={`text-xs whitespace-nowrap ${
                   isActive ? "border-warning text-warning" : "border-success text-success"
                 }`}
               >
@@ -76,17 +77,19 @@ export const EventDetailView = ({
                 )}
               </Badge>
             </div>
-            <h2 className="text-2xl font-bold text-foreground">{event.name}</h2>
+            <h2 className="text-xl sm:text-2xl font-bold text-foreground line-clamp-2 leading-tight">
+              {event.name}
+            </h2>
             <div className="flex items-center gap-2 text-muted-foreground mt-1">
-              <Calendar className="h-4 w-4" />
-              <span className="capitalize">{formattedDate}</span>
+              <Calendar className="h-4 w-4 shrink-0" />
+              <span className="capitalize whitespace-nowrap text-sm sm:text-base">{formattedDate}</span>
             </div>
             {event.notes && (
-              <p className="text-sm text-muted-foreground mt-2">{event.notes}</p>
+              <p className="text-sm text-muted-foreground mt-2 line-clamp-2">{event.notes}</p>
             )}
           </div>
         </div>
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-2 shrink-0 ml-11 sm:ml-0">
           <Button variant="outline" size="sm" onClick={onEdit}>
             <Edit2 className="h-4 w-4 mr-2" />
             Editar
