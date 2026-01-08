@@ -109,6 +109,24 @@ const eventTypes = [
   "Outro",
 ];
 
+// Funções para mascarar dados sensíveis
+const maskPhone = (phone: string): string => {
+  if (!phone) return "";
+  const cleaned = phone.replace(/\D/g, "");
+  if (cleaned.length <= 4) return phone;
+  // Mostra apenas os 4 últimos dígitos
+  return phone.slice(0, -4).replace(/\d/g, "•") + phone.slice(-4);
+};
+
+const maskEmail = (email: string): string => {
+  if (!email) return "";
+  const [localPart, domain] = email.split("@");
+  if (!domain) return email;
+  // Mostra apenas primeira letra e domínio
+  const maskedLocal = localPart.charAt(0) + "•".repeat(Math.min(localPart.length - 1, 5));
+  return `${maskedLocal}@${domain}`;
+};
+
 interface LeadFormProps {
   initialData?: Lead;
   onSubmit: (data: LeadInput) => Promise<void>;
@@ -453,15 +471,15 @@ const LeadCard = ({ lead, onEdit, onDelete, onUpdateStage, onUpdateStatus, onSen
 
             <div className="flex flex-wrap items-center gap-3 mt-2 text-sm text-muted-foreground">
               {lead.phone && (
-                <span className="flex items-center gap-1">
+                <span className="flex items-center gap-1" title="Telefone mascarado por segurança">
                   <Phone className="w-3 h-3" />
-                  {lead.phone}
+                  {maskPhone(lead.phone)}
                 </span>
               )}
               {lead.email && (
-                <span className="flex items-center gap-1 truncate">
+                <span className="flex items-center gap-1 truncate" title="E-mail mascarado por segurança">
                   <Mail className="w-3 h-3" />
-                  {lead.email}
+                  {maskEmail(lead.email)}
                 </span>
               )}
             </div>
