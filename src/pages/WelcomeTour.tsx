@@ -99,18 +99,10 @@ export default function WelcomeTour() {
                       <CardTitle className="text-xl">{feature.title}</CardTitle>
                     </div>
                   </CardHeader>
-                  <CardContent className="space-y-4">
+                  <CardContent>
                     <CardDescription className="text-base leading-relaxed">
                       {feature.description}
                     </CardDescription>
-                    <Button
-                      onClick={() => handleNavigate(feature.tab)}
-                      variant="outline"
-                      className="w-full group"
-                    >
-                      Explorar
-                      <ArrowRight className="w-4 h-4 ml-2 transition-transform group-hover:translate-x-1" />
-                    </Button>
                   </CardContent>
                 </Card>
               </motion.div>
