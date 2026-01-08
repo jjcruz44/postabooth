@@ -53,9 +53,8 @@ export default function WelcomeTour() {
   };
 
   const handleSkip = () => {
-    if (dontShowAgain) {
-      localStorage.setItem("hideTour", "true");
-    }
+    // Always mark tour as seen when going to dashboard
+    localStorage.setItem("hideTour", "true");
     navigate("/dashboard");
   };
 
