@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { 
   Settings, LogOut, ChevronLeft, ChevronRight, Search, 
   Sparkles, Loader2, CalendarDays, Calendar,
-  Menu, X, Users, ClipboardList
+  Menu, X, Users, ClipboardList, PartyPopper
 } from "lucide-react";
 import { useNavigate, Link } from "react-router-dom";
 import clickarLogo from "@/assets/clickar-logo.png";
@@ -15,6 +15,7 @@ import { PlannerView } from "@/components/dashboard/PlannerView";
 import { MyCalendarView } from "@/components/dashboard/MyCalendarView";
 import { LeadsView } from "@/components/dashboard/LeadsView";
 import { ChecklistsView } from "@/components/dashboard/ChecklistsView";
+import { EventsView } from "@/components/dashboard/EventsView";
 import { ContentDetailModal } from "@/components/dashboard/ContentDetailModal";
 import { useToast } from "@/hooks/use-toast";
 import { ContentSuggestion } from "@/hooks/useContentSuggestions";
@@ -23,7 +24,7 @@ import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { ShareButton } from "@/components/dashboard/ShareButton";
 
-type ViewType = "planejamento" | "gerador" | "meu-calendario" | "leads" | "checklists";
+type ViewType = "planejamento" | "gerador" | "meu-calendario" | "leads" | "eventos";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -44,7 +45,7 @@ const Dashboard = () => {
     { id: "gerador" as const, label: "Gerador de Posts", icon: Sparkles, premium: false },
     { id: "meu-calendario" as const, label: "Meu Calendário", icon: Calendar, premium: false },
     { id: "leads" as const, label: "Meus Leads", icon: Users, premium: false },
-    { id: "checklists" as const, label: "Checklists", icon: ClipboardList, premium: false },
+    { id: "eventos" as const, label: "Eventos", icon: PartyPopper, premium: false },
   ];
 
   const handleSaveContent = async (content: {
@@ -318,8 +319,8 @@ const Dashboard = () => {
           {activeView === "leads" && (
             <LeadsView />
           )}
-          {activeView === "checklists" && (
-            <ChecklistsView />
+          {activeView === "eventos" && (
+            <EventsView />
           )}
         </main>
       </div>

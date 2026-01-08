@@ -6,6 +6,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -20,7 +21,7 @@ import { Event } from "@/hooks/useEvents";
 interface EventFormModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSubmit: (data: { name: string; event_date: string; event_type: string }) => void;
+  onSubmit: (data: { name: string; event_date: string; event_type: string; notes?: string }) => void;
   initialData?: Event;
 }
 
@@ -41,6 +42,7 @@ export const EventFormModal = ({
   const [name, setName] = useState("");
   const [eventDate, setEventDate] = useState("");
   const [eventType, setEventType] = useState("");
+  const [notes, setNotes] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
@@ -48,10 +50,12 @@ export const EventFormModal = ({
       setName(initialData.name);
       setEventDate(initialData.event_date);
       setEventType(initialData.event_type);
+      setNotes(initialData.notes || "");
     } else {
       setName("");
       setEventDate("");
       setEventType("");
+      setNotes("");
     }
   }, [initialData, open]);
 
@@ -61,7 +65,7 @@ export const EventFormModal = ({
 
     setIsSubmitting(true);
     try {
-      await onSubmit({ name, event_date: eventDate, event_type: eventType });
+      await onSubmit({ name, event_date: eventDate, event_type: eventType, notes: notes || undefined });
     } finally {
       setIsSubmitting(false);
     }
@@ -115,6 +119,17 @@ export const EventFormModal = ({
                 ))}
               </SelectContent>
             </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="event-notes">Observação (opcional)</Label>
+            <Textarea
+              id="event-notes"
+              placeholder="Notas adicionais sobre o evento..."
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              rows={2}
+            />
           </div>
 
           <div className="flex justify-end gap-2 pt-4">
