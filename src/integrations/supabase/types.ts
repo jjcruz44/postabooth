@@ -149,6 +149,7 @@ export type Database = {
       }
       events: {
         Row: {
+          contract_url: string | null
           created_at: string
           event_date: string
           event_type: string
@@ -160,6 +161,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          contract_url?: string | null
           created_at?: string
           event_date: string
           event_type: string
@@ -171,6 +173,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          contract_url?: string | null
           created_at?: string
           event_date?: string
           event_type?: string

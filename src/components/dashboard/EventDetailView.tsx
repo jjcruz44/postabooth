@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { ArrowLeft, Calendar, Edit2, CheckCircle2, Clock, Clipboard, DollarSign } from "lucide-react";
+import { ArrowLeft, Calendar, Edit2, CheckCircle2, Clock, Clipboard, DollarSign, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Event } from "@/hooks/useEvents";
 import { EventChecklistSection } from "./EventChecklistSection";
 import { EventPaymentSection } from "./EventPaymentSection";
+import { EventContractSection } from "./EventContractSection";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -19,10 +20,11 @@ const eventTypeLabels: Record<string, string> = {
 };
 
 interface EventDetailViewProps {
-  event: Event & { status?: "ativo" | "concluido"; notes?: string };
+  event: Event & { status?: "ativo" | "concluido"; notes?: string; contract_url?: string | null };
   onBack: () => void;
   onEdit: () => void;
   onStatusChange: (status: "ativo" | "concluido") => void;
+  onRefresh?: () => void;
 }
 
 export const EventDetailView = ({
@@ -30,6 +32,7 @@ export const EventDetailView = ({
   onBack,
   onEdit,
   onStatusChange,
+  onRefresh,
 }: EventDetailViewProps) => {
   const [activeTab, setActiveTab] = useState("checklist");
   const isMobile = useIsMobile();
@@ -116,14 +119,18 @@ export const EventDetailView = ({
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full max-w-md grid-cols-2">
+        <TabsList className="grid w-full max-w-lg grid-cols-3">
           <TabsTrigger value="checklist" className="gap-2">
             <Clipboard className="h-4 w-4" />
-            Checklist
+            <span className="hidden sm:inline">Checklist</span>
           </TabsTrigger>
           <TabsTrigger value="payment" className="gap-2">
             <DollarSign className="h-4 w-4" />
-            Pagamento
+            <span className="hidden sm:inline">Pagamento</span>
+          </TabsTrigger>
+          <TabsTrigger value="contract" className="gap-2">
+            <FileText className="h-4 w-4" />
+            <span className="hidden sm:inline">Contrato</span>
           </TabsTrigger>
         </TabsList>
 
@@ -133,6 +140,17 @@ export const EventDetailView = ({
 
         <TabsContent value="payment" className="mt-6">
           <EventPaymentSection eventId={event.id} />
+        </TabsContent>
+
+        <TabsContent value="contract" className="mt-6">
+          <div className="max-w-md">
+            <h3 className="text-lg font-semibold mb-4">Contrato do Evento</h3>
+            <EventContractSection
+              eventId={event.id}
+              contractUrl={event.contract_url || null}
+              onContractChange={() => onRefresh?.()}
+            />
+          </div>
         </TabsContent>
       </Tabs>
     </div>
