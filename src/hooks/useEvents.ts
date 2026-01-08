@@ -358,6 +358,95 @@ export const useChecklistItems = (eventId: string | null) => {
     }
   };
 
+  const deleteAllItems = async () => {
+    if (!user || !eventId) return false;
+
+    try {
+      const { error } = await supabase
+        .from("checklist_items")
+        .delete()
+        .eq("event_id", eventId)
+        .eq("user_id", user.id);
+
+      if (error) throw error;
+
+      setItems([]);
+      return true;
+    } catch (error) {
+      console.error("Error deleting all checklist items:", error);
+      return false;
+    }
+  };
+
+  const addBulkItems = async (
+    itemsToAdd: { phase: "pre" | "during" | "post"; text: string }[]
+  ) => {
+    if (!user || !eventId || itemsToAdd.length === 0) return false;
+
+    try {
+      // Calculate starting positions for each phase
+      const existingPositions: Record<string, number> = {
+        pre: items.filter((i) => i.phase === "pre").length,
+        during: items.filter((i) => i.phase === "during").length,
+        post: items.filter((i) => i.phase === "post").length,
+      };
+
+      const newItems = itemsToAdd.map((item, index) => {
+        const position = existingPositions[item.phase];
+        existingPositions[item.phase]++;
+        return {
+          event_id: eventId,
+          user_id: user.id,
+          phase: item.phase,
+          text: item.text,
+          completed: false,
+          position,
+        };
+      });
+
+      const { data, error } = await supabase
+        .from("checklist_items")
+        .insert(newItems)
+        .select();
+
+      if (error) throw error;
+
+      setItems((prev) => [...prev, ...(data as ChecklistItem[])]);
+      return true;
+    } catch (error) {
+      console.error("Error adding bulk checklist items:", error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível adicionar os itens.",
+        variant: "destructive",
+      });
+      return false;
+    }
+  };
+
+  const copyFromEvent = async (sourceEventId: string) => {
+    if (!user) return null;
+
+    try {
+      const { data, error } = await supabase
+        .from("checklist_items")
+        .select("phase, text, position")
+        .eq("event_id", sourceEventId)
+        .eq("user_id", user.id)
+        .order("position", { ascending: true });
+
+      if (error) throw error;
+
+      return (data || []).map((item) => ({
+        phase: item.phase as "pre" | "during" | "post",
+        text: item.text,
+      }));
+    } catch (error) {
+      console.error("Error fetching source event items:", error);
+      return null;
+    }
+  };
+
   return {
     items,
     loading,
@@ -366,6 +455,9 @@ export const useChecklistItems = (eventId: string | null) => {
     deleteItem,
     toggleItem,
     moveItem,
+    deleteAllItems,
+    addBulkItems,
+    copyFromEvent,
     refetch: fetchItems,
   };
 };
