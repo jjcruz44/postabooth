@@ -17,6 +17,8 @@ import { LeadsView } from "@/components/dashboard/LeadsView";
 import { ChecklistsView } from "@/components/dashboard/ChecklistsView";
 import { EventsView } from "@/components/dashboard/EventsView";
 import { ContentDetailModal } from "@/components/dashboard/ContentDetailModal";
+import { AccessPhaseBanner } from "@/components/dashboard/AccessPhaseBanner";
+import { UpgradeModal } from "@/components/dashboard/UpgradeModal";
 import { useToast } from "@/hooks/use-toast";
 import { ContentSuggestion } from "@/hooks/useContentSuggestions";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -37,6 +39,7 @@ const Dashboard = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [selectedContent, setSelectedContent] = useState<ContentItem | null>(null);
   const [selectedSuggestion, setSelectedSuggestion] = useState<ContentSuggestion | null>(null);
+  const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
   
   const { contents, loading, addContent, updateStatus, deleteContent, stats } = useContentsDB();
 
@@ -303,6 +306,8 @@ const Dashboard = () => {
         </header>
 
         <main className="flex-1 p-3 md:p-6 overflow-auto">
+          <AccessPhaseBanner onUpgrade={() => setUpgradeModalOpen(true)} />
+          
           {activeView === "planejamento" && (
             <PlannerView />
           )}
@@ -317,10 +322,10 @@ const Dashboard = () => {
             />
           )}
           {activeView === "leads" && (
-            <LeadsView />
+            <LeadsView onUpgrade={() => setUpgradeModalOpen(true)} />
           )}
           {activeView === "eventos" && (
-            <EventsView />
+            <EventsView onUpgrade={() => setUpgradeModalOpen(true)} />
           )}
         </main>
       </div>
@@ -332,6 +337,11 @@ const Dashboard = () => {
           updateStatus(id, status);
           setSelectedContent((prev) => prev ? { ...prev, status } : null);
         }}
+      />
+
+      <UpgradeModal
+        open={upgradeModalOpen}
+        onOpenChange={setUpgradeModalOpen}
       />
     </div>
   );

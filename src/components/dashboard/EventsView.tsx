@@ -9,8 +9,10 @@ import { Badge } from "@/components/ui/badge";
 import { useEvents, Event, useChecklistItems } from "@/hooks/useEvents";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useEventPayments } from "@/hooks/useEventPayments";
+import { useCanPerformAction } from "@/hooks/useAccessPhase";
 import { EventFormModal } from "./EventFormModal";
 import { EventDetailView } from "./EventDetailView";
+import { LimitReachedCard } from "./LimitReachedCard";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -40,13 +42,22 @@ const eventTypeLabels: Record<string, string> = {
 type EventStatus = "ativo" | "concluido";
 type FilterStatus = "all" | EventStatus;
 
-export const EventsView = () => {
+interface EventsViewProps {
+  onUpgrade?: () => void;
+}
+
+export const EventsView = ({ onUpgrade }: EventsViewProps) => {
   const { events, loading, createEvent, updateEvent, deleteEvent, refetch } = useEvents();
+  const { canAddEvent, limits, isPro } = useCanPerformAction();
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingEvent, setEditingEvent] = useState<Event | null>(null);
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const [deleteConfirmEvent, setDeleteConfirmEvent] = useState<Event | null>(null);
   const [filterStatus, setFilterStatus] = useState<FilterStatus>("all");
+
+  // Count active events for limit check
+  const activeEventsCount = events.filter((e) => e.status === "ativo").length;
+  const canCreateEvent = canAddEvent(activeEventsCount);
 
   const handleCreateEvent = async (data: {
     name: string;
@@ -54,6 +65,10 @@ export const EventsView = () => {
     event_type: string;
     notes?: string;
   }) => {
+    if (!canCreateEvent) {
+      onUpgrade?.();
+      return;
+    }
     const result = await createEvent(data);
     if (result) {
       setIsFormOpen(false);
@@ -126,6 +141,7 @@ export const EventsView = () => {
         onRefresh={async () => {
           await refetch();
         }}
+        onUpgrade={onUpgrade}
       />
     );
   }
@@ -145,6 +161,11 @@ export const EventsView = () => {
           <h2 className="text-2xl font-bold text-foreground">Meus Eventos</h2>
           <p className="text-muted-foreground">
             Gerencie seus eventos, tarefas e pagamentos
+            {!isPro && limits.maxActiveEvents !== Infinity && (
+              <span className="ml-2 text-xs">
+                ({activeEventsCount}/{limits.maxActiveEvents} eventos ativos)
+              </span>
+            )}
           </p>
         </div>
         <div className="flex items-center gap-3 w-full sm:w-auto">
@@ -158,7 +179,16 @@ export const EventsView = () => {
               <SelectItem value="concluido">Concluídos</SelectItem>
             </SelectContent>
           </Select>
-          <Button onClick={() => setIsFormOpen(true)} className="gap-2">
+          <Button 
+            onClick={() => {
+              if (!canCreateEvent) {
+                onUpgrade?.();
+                return;
+              }
+              setIsFormOpen(true);
+            }} 
+            className="gap-2"
+          >
             <Plus className="h-4 w-4" />
             Novo Evento
           </Button>
