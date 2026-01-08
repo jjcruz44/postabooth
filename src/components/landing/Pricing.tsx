@@ -18,7 +18,7 @@ const plans = [
   },
   {
     name: "Profissional",
-    price: "R$ 47",
+    price: "R$ 39,90",
     period: "/mês",
     description: "Para quem quer consistência nas redes",
     features: [
@@ -35,7 +35,7 @@ const plans = [
   },
   {
     name: "Agência",
-    price: "R$ 97",
+    price: "R$ 119,90",
     period: "/mês",
     description: "Para múltiplos clientes e perfis",
     features: [
