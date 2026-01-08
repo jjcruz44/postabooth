@@ -3,12 +3,16 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 
+export type EventStatus = "ativo" | "concluido";
+
 export interface Event {
   id: string;
   user_id: string;
   name: string;
   event_date: string;
   event_type: string;
+  status: EventStatus;
+  notes: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -42,7 +46,7 @@ export const useEvents = () => {
         .order("event_date", { ascending: true });
 
       if (error) throw error;
-      setEvents(data || []);
+      setEvents((data || []) as Event[]);
     } catch (error) {
       console.error("Error fetching events:", error);
       toast({
@@ -63,6 +67,7 @@ export const useEvents = () => {
     name: string;
     event_date: string;
     event_type: string;
+    notes?: string;
   }) => {
     if (!user) return null;
 
@@ -74,13 +79,14 @@ export const useEvents = () => {
           name: eventData.name,
           event_date: eventData.event_date,
           event_type: eventData.event_type,
+          notes: eventData.notes || null,
         })
         .select()
         .single();
 
       if (error) throw error;
 
-      setEvents((prev) => [...prev, data]);
+      setEvents((prev) => [...prev, data as Event]);
       toast({
         title: "Sucesso",
         description: "Evento criado com sucesso!",
@@ -103,6 +109,8 @@ export const useEvents = () => {
       name?: string;
       event_date?: string;
       event_type?: string;
+      status?: EventStatus;
+      notes?: string;
     }
   ) => {
     if (!user) return false;
