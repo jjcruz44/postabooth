@@ -54,6 +54,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useLeads, Lead, LeadStage, LeadStatus, LeadInput } from "@/hooks/useLeads";
+import { useCanPerformAction } from "@/hooks/useAccessPhase";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { MessageTemplatesModal } from "./MessageTemplatesModal";
@@ -612,8 +613,13 @@ const LeadCard = ({ lead, onEdit, onDelete, onUpdateStage, onUpdateStatus, onSen
   );
 };
 
-export const LeadsView = () => {
+interface LeadsViewProps {
+  onUpgrade?: () => void;
+}
+
+export const LeadsView = ({ onUpgrade }: LeadsViewProps) => {
   const { leads, loading, addLead, updateLead, deleteLead, updateStage, updateLeadStatus, stats } = useLeads();
+  const { canAddLead, limits, isPro } = useCanPerformAction();
   const [filterStage, setFilterStage] = useState<LeadStage | "all">("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -621,6 +627,8 @@ export const LeadsView = () => {
   const [deletingLead, setDeletingLead] = useState<Lead | null>(null);
   const [isTemplatesOpen, setIsTemplatesOpen] = useState(false);
   const [sendingMessageLead, setSendingMessageLead] = useState<Lead | null>(null);
+
+  const canCreate = canAddLead(leads.length);
 
   const filteredLeads = leads.filter((lead) => {
     const matchesStage = filterStage === "all" || lead.stage === filterStage;
@@ -637,6 +645,10 @@ export const LeadsView = () => {
     if (editingLead) {
       await updateLead(editingLead.id, data);
     } else {
+      if (!canCreate) {
+        onUpgrade?.();
+        return;
+      }
       await addLead(data);
     }
     setEditingLead(null);
@@ -647,6 +659,14 @@ export const LeadsView = () => {
       await deleteLead(deletingLead.id);
       setDeletingLead(null);
     }
+  };
+
+  const handleOpenNewLead = () => {
+    if (!canCreate) {
+      onUpgrade?.();
+      return;
+    }
+    setIsFormOpen(true);
   };
 
   return (
@@ -660,7 +680,12 @@ export const LeadsView = () => {
                 <Users className="w-5 h-5 text-primary" />
               </div>
               <div>
-                <p className="text-2xl font-bold">{stats.total}</p>
+                <p className="text-2xl font-bold">
+                  {stats.total}
+                  {!isPro && limits.maxLeads !== Infinity && (
+                    <span className="text-sm font-normal text-muted-foreground">/{limits.maxLeads}</span>
+                  )}
+                </p>
                 <p className="text-xs text-muted-foreground">Total</p>
               </div>
             </div>
@@ -751,7 +776,7 @@ export const LeadsView = () => {
             }
           }}>
             <DialogTrigger asChild>
-              <Button onClick={() => setIsFormOpen(true)}>
+              <Button onClick={handleOpenNewLead}>
                 <Plus className="w-4 h-4 mr-2" />
                 <span className="hidden sm:inline">Novo Lead</span>
                 <span className="sm:hidden">Novo</span>

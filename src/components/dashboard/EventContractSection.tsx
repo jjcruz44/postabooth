@@ -1,7 +1,8 @@
 import { useState, useRef } from "react";
-import { FileText, Download, RefreshCw, Trash2, Upload } from "lucide-react";
+import { FileText, Download, RefreshCw, Trash2, Upload, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useEventContract } from "@/hooks/useEventContract";
+import { useCanPerformAction } from "@/hooks/useAccessPhase";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -17,22 +18,35 @@ interface EventContractSectionProps {
   eventId: string;
   contractUrl: string | null;
   onContractChange: () => void;
+  onUpgrade?: () => void;
 }
 
 export const EventContractSection = ({
   eventId,
   contractUrl,
   onContractChange,
+  onUpgrade,
 }: EventContractSectionProps) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { uploading, uploadContract, deleteContract, getContractUrl, getContractFileName } =
     useEventContract(eventId);
+  const { canUploadContract } = useCanPerformAction();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [downloading, setDownloading] = useState(false);
+
+  const canUpload = canUploadContract();
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    if (!canUpload) {
+      onUpgrade?.();
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+      return;
+    }
 
     const result = await uploadContract(file);
     if (result) {
@@ -43,6 +57,14 @@ export const EventContractSection = ({
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
+  };
+
+  const handleUploadClick = () => {
+    if (!canUpload) {
+      onUpgrade?.();
+      return;
+    }
+    fileInputRef.current?.click();
   };
 
   const handleDownload = async () => {
@@ -102,7 +124,7 @@ export const EventContractSection = ({
               variant="ghost"
               size="icon"
               className="h-8 w-8"
-              onClick={() => fileInputRef.current?.click()}
+              onClick={handleUploadClick}
               disabled={uploading}
               title="Substituir"
             >
@@ -120,24 +142,38 @@ export const EventContractSection = ({
           </div>
         </div>
       ) : (
-        <Button
-          variant="outline"
-          className="w-full gap-2"
-          onClick={() => fileInputRef.current?.click()}
-          disabled={uploading}
-        >
-          {uploading ? (
-            <>
-              <RefreshCw className="h-4 w-4 animate-spin" />
-              Enviando...
-            </>
+        <div className="space-y-2">
+          {canUpload ? (
+            <Button
+              variant="outline"
+              className="w-full gap-2"
+              onClick={handleUploadClick}
+              disabled={uploading}
+            >
+              {uploading ? (
+                <>
+                  <RefreshCw className="h-4 w-4 animate-spin" />
+                  Enviando...
+                </>
+              ) : (
+                <>
+                  <Upload className="h-4 w-4" />
+                  Anexar Contrato (PDF)
+                </>
+              )}
+            </Button>
           ) : (
-            <>
-              <Upload className="h-4 w-4" />
-              Anexar Contrato (PDF)
-            </>
+            <div className="border border-dashed border-muted-foreground/30 rounded-lg p-4 text-center bg-muted/10">
+              <Lock className="h-5 w-5 mx-auto text-muted-foreground mb-2" />
+              <p className="text-sm text-muted-foreground mb-2">
+                Upload de contratos disponível no Plano Pro
+              </p>
+              <Button size="sm" onClick={onUpgrade}>
+                Fazer Upgrade
+              </Button>
+            </div>
           )}
-        </Button>
+        </div>
       )}
 
       <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>

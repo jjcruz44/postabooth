@@ -25,6 +25,7 @@ interface EventDetailViewProps {
   onEdit: () => void;
   onStatusChange: (status: "ativo" | "concluido") => void;
   onRefresh?: () => void;
+  onUpgrade?: () => void;
 }
 
 export const EventDetailView = ({
@@ -33,6 +34,7 @@ export const EventDetailView = ({
   onEdit,
   onStatusChange,
   onRefresh,
+  onUpgrade,
 }: EventDetailViewProps) => {
   const [activeTab, setActiveTab] = useState("checklist");
   const isMobile = useIsMobile();
@@ -149,6 +151,7 @@ export const EventDetailView = ({
               eventId={event.id}
               contractUrl={event.contract_url || null}
               onContractChange={() => onRefresh?.()}
+              onUpgrade={onUpgrade}
             />
           </div>
         </TabsContent>
