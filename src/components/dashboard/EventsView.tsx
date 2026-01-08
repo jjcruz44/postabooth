@@ -1,5 +1,7 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Plus, Calendar, ChevronRight, Trash2, Edit2, CheckCircle2, Clock, DollarSign } from "lucide-react";
+import { format, parseISO } from "date-fns";
+import { ptBR } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -85,6 +87,28 @@ export const EventsView = () => {
     return (event as Event & { status?: EventStatus }).status === filterStatus;
   });
 
+  // Sort events by date and group by month/year
+  const groupedEvents = useMemo(() => {
+    const sorted = [...filteredEvents].sort((a, b) => 
+      new Date(a.event_date).getTime() - new Date(b.event_date).getTime()
+    );
+
+    const groups: Record<string, typeof filteredEvents> = {};
+    
+    sorted.forEach((event) => {
+      const date = parseISO(event.event_date);
+      const monthYear = format(date, "MMMM yyyy", { locale: ptBR });
+      const capitalizedMonthYear = monthYear.charAt(0).toUpperCase() + monthYear.slice(1);
+      
+      if (!groups[capitalizedMonthYear]) {
+        groups[capitalizedMonthYear] = [];
+      }
+      groups[capitalizedMonthYear].push(event);
+    });
+
+    return groups;
+  }, [filteredEvents]);
+
   // If an event is selected, show its detail view
   if (selectedEvent) {
     return (
@@ -153,16 +177,26 @@ export const EventsView = () => {
           )}
         </Card>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {filteredEvents.map((event) => (
-            <EventCard
-              key={event.id}
-              event={event as Event & { status?: EventStatus; notes?: string }}
-              onClick={() => setSelectedEvent(event)}
-              onEdit={() => setEditingEvent(event)}
-              onDelete={() => setDeleteConfirmEvent(event)}
-              onStatusChange={(status) => handleStatusChange(event, status)}
-            />
+        <div className="space-y-8">
+          {Object.entries(groupedEvents).map(([monthYear, monthEvents]) => (
+            <div key={monthYear}>
+              <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+                <Calendar className="h-5 w-5 text-primary" />
+                {monthYear}
+              </h3>
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {monthEvents.map((event) => (
+                  <EventCard
+                    key={event.id}
+                    event={event as Event & { status?: EventStatus; notes?: string }}
+                    onClick={() => setSelectedEvent(event)}
+                    onEdit={() => setEditingEvent(event)}
+                    onDelete={() => setDeleteConfirmEvent(event)}
+                    onStatusChange={(status) => handleStatusChange(event, status)}
+                  />
+                ))}
+              </div>
+            </div>
           ))}
         </div>
       )}
