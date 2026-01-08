@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Plus, Calendar, ChevronRight, Trash2, Edit2, CheckCircle2, Clock, DollarSign } from "lucide-react";
+import { Plus, Calendar, ChevronRight, Trash2, Edit2, CheckCircle2, Clock, DollarSign, FileText } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
@@ -41,7 +41,7 @@ type EventStatus = "ativo" | "concluido";
 type FilterStatus = "all" | EventStatus;
 
 export const EventsView = () => {
-  const { events, loading, createEvent, updateEvent, deleteEvent } = useEvents();
+  const { events, loading, createEvent, updateEvent, deleteEvent, refetch } = useEvents();
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingEvent, setEditingEvent] = useState<Event | null>(null);
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
@@ -112,14 +112,20 @@ export const EventsView = () => {
 
   // If an event is selected, show its detail view
   if (selectedEvent) {
+    // Find the latest version of the event from the events array
+    const currentEvent = events.find(e => e.id === selectedEvent.id) || selectedEvent;
+    
     return (
       <EventDetailView
-        event={selectedEvent}
+        event={currentEvent}
         onBack={() => setSelectedEvent(null)}
         onEdit={() => {
-          setEditingEvent(selectedEvent);
+          setEditingEvent(currentEvent);
         }}
-        onStatusChange={(status) => handleStatusChange(selectedEvent, status)}
+        onStatusChange={(status) => handleStatusChange(currentEvent, status)}
+        onRefresh={async () => {
+          await refetch();
+        }}
       />
     );
   }
@@ -243,7 +249,7 @@ export const EventsView = () => {
 };
 
 interface EventCardProps {
-  event: Event & { status?: "ativo" | "concluido"; notes?: string };
+  event: Event & { status?: "ativo" | "concluido"; notes?: string; contract_url?: string | null };
   onClick: () => void;
   onEdit: () => void;
   onDelete: () => void;
@@ -365,6 +371,14 @@ const EventCard = ({ event, onClick, onEdit, onDelete, onStatusChange }: EventCa
                 ? "Quitado"
                 : `R$ ${pendingValue.toLocaleString("pt-BR", { minimumFractionDigits: 2 })} pendente`}
             </Badge>
+          </div>
+        )}
+
+        {/* Contract indicator */}
+        {event.contract_url && (
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <FileText className="h-3 w-3 text-primary" />
+            <span className="text-primary font-medium">Contrato anexado</span>
           </div>
         )}
       </div>

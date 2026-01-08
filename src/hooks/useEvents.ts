@@ -13,6 +13,7 @@ export interface Event {
   event_type: string;
   status: EventStatus;
   notes: string | null;
+  contract_url: string | null;
   created_at: string;
   updated_at: string;
 }
