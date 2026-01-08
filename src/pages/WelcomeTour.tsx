@@ -70,7 +70,7 @@ export default function WelcomeTour() {
             transition={{ duration: 0.5 }}
           >
             <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-3">
-              Bem-vindo ao CLICKAR! 🎉
+              Bem-vindo ao CLICKAR!
             </h1>
             <p className="text-muted-foreground text-lg">
               Conheça as principais funcionalidades para impulsionar seu negócio de eventos.
