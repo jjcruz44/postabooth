@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { ChevronDown, ChevronUp, Plus, Trash2, Copy, Clipboard, GripVertical } from "lucide-react";
+import { useState, useEffect } from "react";
+import { ChevronDown, ChevronUp, Plus, Trash2, Copy, Clipboard, GripVertical, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -216,12 +216,20 @@ export const EventChecklistSection = ({ eventId }: EventChecklistSectionProps) =
   return (
     <div className="space-y-6">
       {/* Progress summary with actions */}
-      <Card className="p-4">
+      <Card className={`p-4 ${progress === 100 ? "border-green-500/50" : ""}`}>
         <div className="flex items-center justify-between mb-2">
-          <span className="font-medium">Progresso geral</span>
           <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">
-              {completedCount} de {totalCount} itens
+            {progress === 100 && (
+              <CheckCircle2 className="h-5 w-5 text-green-500" />
+            )}
+            <span className="font-medium">Progresso geral</span>
+            {progress === 100 && (
+              <span className="text-xs text-green-600 font-medium">Concluído!</span>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            <span className={`text-sm font-medium ${progress === 100 ? "text-green-600" : "text-muted-foreground"}`}>
+              {completedCount}/{totalCount} ({Math.round(progress)}%)
             </span>
             <Button
               variant="outline"
@@ -243,7 +251,10 @@ export const EventChecklistSection = ({ eventId }: EventChecklistSectionProps) =
             </Button>
           </div>
         </div>
-        <Progress value={progress} className="h-2" />
+        <Progress 
+          value={progress} 
+          className={`h-2 ${progress === 100 ? "[&>div]:bg-green-500" : "[&>div]:bg-green-500"}`}
+        />
       </Card>
 
       {/* Phases */}
@@ -252,6 +263,7 @@ export const EventChecklistSection = ({ eventId }: EventChecklistSectionProps) =
           <PhaseSection
             key={phase}
             phase={phase}
+            eventId={eventId}
             items={items.filter((i) => i.phase === phase)}
             onAddItem={(text) => addItem(phase, text)}
             onToggleItem={toggleItem}
@@ -301,6 +313,7 @@ export const EventChecklistSection = ({ eventId }: EventChecklistSectionProps) =
 
 interface PhaseSectionProps {
   phase: Phase;
+  eventId: string;
   items: ChecklistItem[];
   onAddItem: (text: string) => Promise<any>;
   onToggleItem: (id: string) => Promise<boolean>;
@@ -309,8 +322,12 @@ interface PhaseSectionProps {
   onReorderItems: (reorderedIds: string[]) => Promise<boolean>;
 }
 
+const getCollapseStorageKey = (eventId: string, phase: Phase) => 
+  `checklist-collapse-${eventId}-${phase}`;
+
 const PhaseSection = ({
   phase,
+  eventId,
   items,
   onAddItem,
   onToggleItem,
@@ -318,14 +335,28 @@ const PhaseSection = ({
   onDeleteItem,
   onReorderItems,
 }: PhaseSectionProps) => {
-  const [isOpen, setIsOpen] = useState(true);
+  const storageKey = getCollapseStorageKey(eventId, phase);
+  
+  const [isOpen, setIsOpen] = useState(() => {
+    const saved = localStorage.getItem(storageKey);
+    return saved !== null ? saved === "true" : true;
+  });
   const [newItemText, setNewItemText] = useState("");
   const [isAdding, setIsAdding] = useState(false);
   const [activeId, setActiveId] = useState<string | null>(null);
 
+  // Persist collapse state
+  useEffect(() => {
+    localStorage.setItem(storageKey, String(isOpen));
+  }, [isOpen, storageKey]);
+
   const config = phaseConfig[phase];
   const sortedItems = [...items].sort((a, b) => a.position - b.position);
   const completedCount = items.filter((i) => i.completed).length;
+  const totalCount = items.length;
+  const progress = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
+  const isComplete = totalCount > 0 && progress === 100;
+  const hasItems = totalCount > 0;
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -370,34 +401,64 @@ const PhaseSection = ({
 
   return (
     <Collapsible open={isOpen} onOpenChange={setIsOpen}>
-      <Card className="overflow-hidden">
+      <Card className={`overflow-hidden ${isComplete ? "border-green-500/50" : ""}`}>
         <CollapsibleTrigger asChild>
-          <div className="flex items-center justify-between p-4 cursor-pointer hover:bg-muted/50 transition-colors">
-            <div className="flex items-center gap-3">
-              <div
-                className={`w-3 h-3 rounded-full ${
-                  phase === "pre"
-                    ? "bg-warning"
-                    : phase === "during"
-                    ? "bg-primary"
-                    : "bg-success"
-                }`}
-              />
-              <div>
-                <h3 className="font-semibold">{config.label}</h3>
-                <p className="text-xs text-muted-foreground">{config.description}</p>
+          <div className="p-4 cursor-pointer hover:bg-muted/50 transition-colors">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                {isComplete ? (
+                  <CheckCircle2 className="h-5 w-5 text-green-500 shrink-0" />
+                ) : (
+                  <div
+                    className={`w-3 h-3 rounded-full shrink-0 ${
+                      phase === "pre"
+                        ? "bg-warning"
+                        : phase === "during"
+                        ? "bg-primary"
+                        : "bg-success"
+                    }`}
+                  />
+                )}
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-semibold">{config.label}</h3>
+                    {isComplete && (
+                      <span className="text-xs text-green-600 font-medium">Concluído</span>
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground">{config.description}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                {hasItems ? (
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-muted-foreground">
+                      {completedCount}/{totalCount}
+                    </span>
+                    <span className={`text-sm font-medium ${isComplete ? "text-green-600" : "text-muted-foreground"}`}>
+                      ({progress}%)
+                    </span>
+                  </div>
+                ) : (
+                  <span className="text-sm text-muted-foreground">Sem itens</span>
+                )}
+                {isOpen ? (
+                  <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                ) : (
+                  <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                )}
               </div>
             </div>
-            <div className="flex items-center gap-3">
-              <span className="text-sm text-muted-foreground">
-                {completedCount}/{items.length}
-              </span>
-              {isOpen ? (
-                <ChevronUp className="h-4 w-4 text-muted-foreground" />
-              ) : (
-                <ChevronDown className="h-4 w-4 text-muted-foreground" />
-              )}
-            </div>
+            
+            {/* Progress bar */}
+            {hasItems && (
+              <div className="mt-3">
+                <Progress 
+                  value={progress} 
+                  className={`h-2 ${isComplete ? "[&>div]:bg-green-500" : "[&>div]:bg-green-500"}`}
+                />
+              </div>
+            )}
           </div>
         </CollapsibleTrigger>
 
