@@ -17,6 +17,7 @@ const plans = [
     cta: "Começar grátis",
     popular: false,
     navigateTo: "/login?tab=signup",
+    priceHidden: false,
   },
   {
     name: "Profissional",
@@ -35,6 +36,7 @@ const plans = [
     cta: "Em breve",
     popular: true,
     disabled: true,
+    priceHidden: true,
   },
   {
     name: "Agência",
@@ -51,6 +53,7 @@ const plans = [
     cta: "Em breve",
     popular: false,
     disabled: true,
+    priceHidden: true,
   },
 ];
 
@@ -128,13 +131,21 @@ export const Pricing = () => {
                   {plan.name}
                 </h3>
                 <div className="flex items-baseline justify-center gap-1">
-                  <span className="text-4xl font-bold text-foreground">
-                    {plan.price}
-                  </span>
-                  {plan.period && (
-                    <span className="text-muted-foreground text-sm">
-                      {plan.period}
+                  {plan.priceHidden ? (
+                    <span className="text-xl font-medium text-muted-foreground/70 italic">
+                      Valores em definição
                     </span>
+                  ) : (
+                    <>
+                      <span className="text-4xl font-bold text-foreground">
+                        {plan.price}
+                      </span>
+                      {plan.period && (
+                        <span className="text-muted-foreground text-sm">
+                          {plan.period}
+                        </span>
+                      )}
+                    </>
                   )}
                 </div>
                 <p className="text-muted-foreground text-sm mt-2">
