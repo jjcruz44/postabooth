@@ -359,6 +359,45 @@ export const useChecklistItems = (eventId: string | null) => {
     }
   };
 
+  const reorderItems = async (phase: "pre" | "during" | "post", reorderedIds: string[]) => {
+    if (!user || !eventId) return false;
+
+    try {
+      // Update positions based on new order
+      const updates = reorderedIds.map((id, index) => ({
+        id,
+        position: index,
+      }));
+
+      // Update all positions in parallel
+      await Promise.all(
+        updates.map(({ id, position }) =>
+          supabase
+            .from("checklist_items")
+            .update({ position })
+            .eq("id", id)
+            .eq("user_id", user.id)
+        )
+      );
+
+      // Update local state
+      setItems((prev) =>
+        prev.map((item) => {
+          const newPosition = updates.find((u) => u.id === item.id);
+          if (newPosition) {
+            return { ...item, position: newPosition.position };
+          }
+          return item;
+        })
+      );
+
+      return true;
+    } catch (error) {
+      console.error("Error reordering checklist items:", error);
+      return false;
+    }
+  };
+
   const deleteAllItems = async () => {
     if (!user || !eventId) return false;
 
@@ -456,6 +495,7 @@ export const useChecklistItems = (eventId: string | null) => {
     deleteItem,
     toggleItem,
     moveItem,
+    reorderItems,
     deleteAllItems,
     addBulkItems,
     copyFromEvent,

@@ -14,9 +14,28 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { Plus, Trash2, ChevronDown, Calendar, ChevronUp } from "lucide-react";
+import { Plus, Trash2, ChevronDown, Calendar, GripVertical } from "lucide-react";
 import { Event, useChecklistItems, ChecklistItem } from "@/hooks/useEvents";
 import { cn } from "@/lib/utils";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+  DragOverlay,
+  DragStartEvent,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 interface EventChecklistModalProps {
   event: Event | null;
@@ -35,7 +54,7 @@ export const EventChecklistModal = ({
   open,
   onOpenChange,
 }: EventChecklistModalProps) => {
-  const { items, loading, addItem, updateItem, deleteItem, toggleItem, moveItem } =
+  const { items, loading, addItem, updateItem, deleteItem, toggleItem, reorderItems } =
     useChecklistItems(event?.id || null);
 
   const completedCount = items.filter((i) => i.completed).length;
@@ -93,7 +112,7 @@ export const EventChecklistModal = ({
                   onToggleItem={toggleItem}
                   onUpdateItem={updateItem}
                   onDeleteItem={deleteItem}
-                  onMoveItem={moveItem}
+                  onReorderItems={(reorderedIds) => reorderItems(phase.key, reorderedIds)}
                 />
               );
             })}
@@ -111,7 +130,7 @@ interface PhaseSectionProps {
   onToggleItem: (itemId: string) => Promise<boolean>;
   onUpdateItem: (itemId: string, updates: { text?: string }) => Promise<boolean>;
   onDeleteItem: (itemId: string) => Promise<boolean>;
-  onMoveItem: (itemId: string, direction: "up" | "down") => Promise<boolean>;
+  onReorderItems: (reorderedIds: string[]) => Promise<boolean>;
 }
 
 const PhaseSection = ({
@@ -121,13 +140,25 @@ const PhaseSection = ({
   onToggleItem,
   onUpdateItem,
   onDeleteItem,
-  onMoveItem,
+  onReorderItems,
 }: PhaseSectionProps) => {
   const [isOpen, setIsOpen] = useState(true);
   const [newItemText, setNewItemText] = useState("");
   const [isAdding, setIsAdding] = useState(false);
+  const [activeId, setActiveId] = useState<string | null>(null);
 
   const completedCount = items.filter((i) => i.completed).length;
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
   const handleAddItem = async () => {
     if (!newItemText.trim()) return;
@@ -143,6 +174,28 @@ const PhaseSection = ({
       handleAddItem();
     }
   };
+
+  const handleDragStart = (event: DragStartEvent) => {
+    setActiveId(event.active.id as string);
+  };
+
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+    setActiveId(null);
+
+    if (over && active.id !== over.id) {
+      const oldIndex = items.findIndex((item) => item.id === active.id);
+      const newIndex = items.findIndex((item) => item.id === over.id);
+
+      if (oldIndex !== -1 && newIndex !== -1) {
+        const reordered = arrayMove(items, oldIndex, newIndex);
+        const reorderedIds = reordered.map((item) => item.id);
+        await onReorderItems(reorderedIds);
+      }
+    }
+  };
+
+  const activeItem = activeId ? items.find((item) => item.id === activeId) : null;
 
   return (
     <Collapsible open={isOpen} onOpenChange={setIsOpen}>
@@ -169,19 +222,38 @@ const PhaseSection = ({
 
       <CollapsibleContent className="px-4 pb-4">
         <div className="space-y-2 mb-3">
-          {items.map((item, index) => (
-            <ChecklistItemRow
-              key={item.id}
-              item={item}
-              onToggle={() => onToggleItem(item.id)}
-              onUpdate={(text) => onUpdateItem(item.id, { text })}
-              onDelete={() => onDeleteItem(item.id)}
-              onMoveUp={() => onMoveItem(item.id, "up")}
-              onMoveDown={() => onMoveItem(item.id, "down")}
-              isFirst={index === 0}
-              isLast={index === items.length - 1}
-            />
-          ))}
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragStart={handleDragStart}
+            onDragEnd={handleDragEnd}
+          >
+            <SortableContext
+              items={items.map((item) => item.id)}
+              strategy={verticalListSortingStrategy}
+            >
+              {items.map((item) => (
+                <SortableChecklistItem
+                  key={item.id}
+                  item={item}
+                  onToggle={() => onToggleItem(item.id)}
+                  onUpdate={(text) => onUpdateItem(item.id, { text })}
+                  onDelete={() => onDeleteItem(item.id)}
+                />
+              ))}
+            </SortableContext>
+            <DragOverlay>
+              {activeItem ? (
+                <div className="flex items-center gap-3 p-2 rounded-lg bg-card border-2 border-primary shadow-lg">
+                  <GripVertical className="h-4 w-4 text-muted-foreground" />
+                  <Checkbox checked={activeItem.completed} className="h-5 w-5" />
+                  <span className={cn("flex-1", activeItem.completed && "line-through text-muted-foreground")}>
+                    {activeItem.text}
+                  </span>
+                </div>
+              ) : null}
+            </DragOverlay>
+          </DndContext>
         </div>
 
         <div className="flex gap-2">
@@ -205,29 +277,35 @@ const PhaseSection = ({
   );
 };
 
-interface ChecklistItemRowProps {
+interface SortableChecklistItemProps {
   item: ChecklistItem;
   onToggle: () => void;
   onUpdate: (text: string) => void;
   onDelete: () => void;
-  onMoveUp: () => void;
-  onMoveDown: () => void;
-  isFirst: boolean;
-  isLast: boolean;
 }
 
-const ChecklistItemRow = ({
+const SortableChecklistItem = ({
   item,
   onToggle,
   onUpdate,
   onDelete,
-  onMoveUp,
-  onMoveDown,
-  isFirst,
-  isLast,
-}: ChecklistItemRowProps) => {
+}: SortableChecklistItemProps) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editText, setEditText] = useState(item.text);
+
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: item.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
 
   const handleSave = () => {
     if (editText.trim() && editText !== item.text) {
@@ -246,7 +324,23 @@ const ChecklistItemRow = ({
   };
 
   return (
-    <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 group">
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={cn(
+        "flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 group",
+        isDragging && "opacity-50 bg-muted"
+      )}
+    >
+      <button
+        {...attributes}
+        {...listeners}
+        className="cursor-grab active:cursor-grabbing touch-none p-1 hover:bg-muted rounded transition-colors"
+        aria-label="Arrastar para reordenar"
+      >
+        <GripVertical className="h-4 w-4 text-muted-foreground" />
+      </button>
+
       <Checkbox
         checked={item.completed}
         onCheckedChange={onToggle}
@@ -274,34 +368,14 @@ const ChecklistItemRow = ({
         </span>
       )}
 
-      <div className="flex items-center gap-1">
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-8 w-8 opacity-0 group-hover:opacity-100"
-          onClick={onMoveUp}
-          disabled={isFirst}
-        >
-          <ChevronUp className="h-4 w-4" />
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-8 w-8 opacity-0 group-hover:opacity-100"
-          onClick={onMoveDown}
-          disabled={isLast}
-        >
-          <ChevronDown className="h-4 w-4" />
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-8 w-8 opacity-0 group-hover:opacity-100 text-destructive hover:text-destructive"
-          onClick={onDelete}
-        >
-          <Trash2 className="h-4 w-4" />
-        </Button>
-      </div>
+      <Button
+        variant="ghost"
+        size="icon"
+        className="h-8 w-8 opacity-0 group-hover:opacity-100 text-destructive hover:text-destructive"
+        onClick={onDelete}
+      >
+        <Trash2 className="h-4 w-4" />
+      </Button>
     </div>
   );
 };

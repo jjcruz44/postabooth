@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ChevronDown, ChevronUp, Plus, Trash2, Copy, Clipboard, FileText, Calendar } from "lucide-react";
+import { ChevronDown, ChevronUp, Plus, Trash2, Copy, Clipboard, GripVertical } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -20,6 +20,25 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+  DragOverlay,
+  DragStartEvent,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 interface EventChecklistSectionProps {
   eventId: string;
@@ -43,7 +62,7 @@ export const EventChecklistSection = ({ eventId }: EventChecklistSectionProps) =
     updateItem,
     deleteItem,
     toggleItem,
-    moveItem,
+    reorderItems,
     deleteAllItems,
     addBulkItems,
     copyFromEvent,
@@ -102,7 +121,6 @@ export const EventChecklistSection = ({ eventId }: EventChecklistSectionProps) =
   };
 
   const handleCreateFromScratch = () => {
-    // Just add an empty item to start the checklist
     addItem("pre", "Primeira tarefa do evento");
     toast({
       title: "Checklist criado",
@@ -182,7 +200,6 @@ export const EventChecklistSection = ({ eventId }: EventChecklistSectionProps) =
           </div>
         </Card>
 
-        {/* Copy Modal */}
         <CopyChecklistModal
           open={copyModalOpen}
           onOpenChange={setCopyModalOpen}
@@ -240,7 +257,7 @@ export const EventChecklistSection = ({ eventId }: EventChecklistSectionProps) =
             onToggleItem={toggleItem}
             onUpdateItem={updateItem}
             onDeleteItem={deleteItem}
-            onMoveItem={moveItem}
+            onReorderItems={(reorderedIds) => reorderItems(phase, reorderedIds)}
           />
         ))}
       </div>
@@ -289,7 +306,7 @@ interface PhaseSectionProps {
   onToggleItem: (id: string) => Promise<boolean>;
   onUpdateItem: (id: string, updates: { text?: string }) => Promise<boolean>;
   onDeleteItem: (id: string) => Promise<boolean>;
-  onMoveItem: (id: string, direction: "up" | "down") => Promise<boolean>;
+  onReorderItems: (reorderedIds: string[]) => Promise<boolean>;
 }
 
 const PhaseSection = ({
@@ -299,15 +316,27 @@ const PhaseSection = ({
   onToggleItem,
   onUpdateItem,
   onDeleteItem,
-  onMoveItem,
+  onReorderItems,
 }: PhaseSectionProps) => {
   const [isOpen, setIsOpen] = useState(true);
   const [newItemText, setNewItemText] = useState("");
   const [isAdding, setIsAdding] = useState(false);
+  const [activeId, setActiveId] = useState<string | null>(null);
 
   const config = phaseConfig[phase];
   const sortedItems = [...items].sort((a, b) => a.position - b.position);
   const completedCount = items.filter((i) => i.completed).length;
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
   const handleAddItem = async () => {
     if (!newItemText.trim()) return;
@@ -316,6 +345,28 @@ const PhaseSection = ({
     setNewItemText("");
     setIsAdding(false);
   };
+
+  const handleDragStart = (event: DragStartEvent) => {
+    setActiveId(event.active.id as string);
+  };
+
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+    setActiveId(null);
+
+    if (over && active.id !== over.id) {
+      const oldIndex = sortedItems.findIndex((item) => item.id === active.id);
+      const newIndex = sortedItems.findIndex((item) => item.id === over.id);
+
+      if (oldIndex !== -1 && newIndex !== -1) {
+        const reordered = arrayMove(sortedItems, oldIndex, newIndex);
+        const reorderedIds = reordered.map((item) => item.id);
+        await onReorderItems(reorderedIds);
+      }
+    }
+  };
+
+  const activeItem = activeId ? sortedItems.find((item) => item.id === activeId) : null;
 
   return (
     <Collapsible open={isOpen} onOpenChange={setIsOpen}>
@@ -352,19 +403,38 @@ const PhaseSection = ({
 
         <CollapsibleContent>
           <div className="px-4 pb-4 space-y-2">
-            {sortedItems.map((item, index) => (
-              <ChecklistItemRow
-                key={item.id}
-                item={item}
-                isFirst={index === 0}
-                isLast={index === sortedItems.length - 1}
-                onToggle={() => onToggleItem(item.id)}
-                onUpdate={(text) => onUpdateItem(item.id, { text })}
-                onDelete={() => onDeleteItem(item.id)}
-                onMoveUp={() => onMoveItem(item.id, "up")}
-                onMoveDown={() => onMoveItem(item.id, "down")}
-              />
-            ))}
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragStart={handleDragStart}
+              onDragEnd={handleDragEnd}
+            >
+              <SortableContext
+                items={sortedItems.map((item) => item.id)}
+                strategy={verticalListSortingStrategy}
+              >
+                {sortedItems.map((item) => (
+                  <SortableChecklistItem
+                    key={item.id}
+                    item={item}
+                    onToggle={() => onToggleItem(item.id)}
+                    onUpdate={(text) => onUpdateItem(item.id, { text })}
+                    onDelete={() => onDeleteItem(item.id)}
+                  />
+                ))}
+              </SortableContext>
+              <DragOverlay>
+                {activeItem ? (
+                  <div className="flex items-center gap-2 p-2 rounded-lg bg-card border-2 border-primary shadow-lg">
+                    <GripVertical className="h-4 w-4 text-muted-foreground" />
+                    <Checkbox checked={activeItem.completed} className="shrink-0" />
+                    <span className={`flex-1 text-sm ${activeItem.completed ? "line-through text-muted-foreground" : ""}`}>
+                      {activeItem.text}
+                    </span>
+                  </div>
+                ) : null}
+              </DragOverlay>
+            </DndContext>
 
             {/* Add new item */}
             <div className="flex items-center gap-2 pt-2">
@@ -392,29 +462,35 @@ const PhaseSection = ({
   );
 };
 
-interface ChecklistItemRowProps {
+interface SortableChecklistItemProps {
   item: ChecklistItem;
-  isFirst: boolean;
-  isLast: boolean;
   onToggle: () => void;
   onUpdate: (text: string) => void;
   onDelete: () => void;
-  onMoveUp: () => void;
-  onMoveDown: () => void;
 }
 
-const ChecklistItemRow = ({
+const SortableChecklistItem = ({
   item,
-  isFirst,
-  isLast,
   onToggle,
   onUpdate,
   onDelete,
-  onMoveUp,
-  onMoveDown,
-}: ChecklistItemRowProps) => {
+}: SortableChecklistItemProps) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editText, setEditText] = useState(item.text);
+
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: item.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
 
   const handleSaveEdit = () => {
     if (editText.trim() && editText !== item.text) {
@@ -425,30 +501,20 @@ const ChecklistItemRow = ({
 
   return (
     <div
+      ref={setNodeRef}
+      style={style}
       className={`flex items-center gap-2 p-2 rounded-lg hover:bg-muted/50 transition-colors group ${
         item.completed ? "opacity-60" : ""
-      }`}
+      } ${isDragging ? "opacity-50 bg-muted" : ""}`}
     >
-      <div className="flex flex-col gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-4 w-4"
-          onClick={onMoveUp}
-          disabled={isFirst}
-        >
-          <ChevronUp className="h-3 w-3" />
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-4 w-4"
-          onClick={onMoveDown}
-          disabled={isLast}
-        >
-          <ChevronDown className="h-3 w-3" />
-        </Button>
-      </div>
+      <button
+        {...attributes}
+        {...listeners}
+        className="cursor-grab active:cursor-grabbing touch-none p-1 hover:bg-muted rounded transition-colors"
+        aria-label="Arrastar para reordenar"
+      >
+        <GripVertical className="h-4 w-4 text-muted-foreground" />
+      </button>
 
       <Checkbox
         checked={item.completed}
