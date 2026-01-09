@@ -63,7 +63,8 @@ export const CTA = () => {
               >
                 <Button
                   size="xl"
-                  className="bg-white text-primary hover:bg-white/90 shadow-elevated group"
+                  variant="outline"
+                  className="!bg-white !text-primary border-0 hover:!bg-white/90 shadow-elevated group"
                 >
                   Criar minha conta grátis
                   <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
