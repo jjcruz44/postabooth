@@ -1,8 +1,11 @@
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Sparkles } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 export const CTA = () => {
+  const navigate = useNavigate();
+
   return (
     <section className="py-24">
       <div className="container mx-auto px-4">
@@ -65,6 +68,7 @@ export const CTA = () => {
                   size="xl"
                   variant="outline"
                   className="!bg-white !text-primary border-0 hover:!bg-white/90 shadow-elevated group"
+                  onClick={() => navigate("/login?tab=signup")}
                 >
                   Criar minha conta grátis
                   <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
