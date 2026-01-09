@@ -1,4 +1,5 @@
-import { Camera, Instagram, Facebook, Youtube } from "lucide-react";
+import { Instagram, Facebook, Youtube } from "lucide-react";
+import clickarLogo from "@/assets/clickar-logo.png";
 
 export const Footer = () => {
   return (
@@ -8,9 +9,7 @@ export const Footer = () => {
           {/* Brand */}
           <div className="md:col-span-1">
             <div className="flex items-center gap-2 mb-4">
-              <div className="w-8 h-8 rounded-lg gradient-primary flex items-center justify-center">
-                <Camera className="w-4 h-4 text-primary-foreground" />
-              </div>
+              <img src={clickarLogo} alt="CLICKAR" className="w-8 h-8 rounded-lg object-contain" />
               <span className="font-bold text-lg">CLICKAR</span>
             </div>
             <p className="text-background/60 text-sm mb-4">
