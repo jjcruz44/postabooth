@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ChevronDown, ChevronUp, Plus, Trash2, Copy } from "lucide-react";
+import { ChevronDown, ChevronUp, Plus, Trash2, Copy, Clipboard, FileText, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -10,6 +10,16 @@ import { useChecklistItems, ChecklistItem, useEvents } from "@/hooks/useEvents";
 import { useToast } from "@/hooks/use-toast";
 import { CopyChecklistModal } from "./CopyChecklistModal";
 import { ChecklistTemplate } from "@/data/checklistTemplates";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface EventChecklistSectionProps {
   eventId: string;
@@ -40,10 +50,14 @@ export const EventChecklistSection = ({ eventId }: EventChecklistSectionProps) =
   } = useChecklistItems(eventId);
 
   const [copyModalOpen, setCopyModalOpen] = useState(false);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const completedCount = items.filter((i) => i.completed).length;
   const totalCount = items.length;
   const progress = totalCount > 0 ? (completedCount / totalCount) * 100 : 0;
+
+  const hasChecklist = totalCount > 0;
 
   const handleApplyTemplate = async (
     template: ChecklistTemplate,
@@ -87,6 +101,31 @@ export const EventChecklistSection = ({ eventId }: EventChecklistSectionProps) =
     }
   };
 
+  const handleCreateFromScratch = () => {
+    // Just add an empty item to start the checklist
+    addItem("pre", "Primeira tarefa do evento");
+    toast({
+      title: "Checklist criado",
+      description: "Seu checklist foi iniciado. Adicione mais itens conforme necessário.",
+    });
+  };
+
+  const handleDeleteChecklist = async () => {
+    setIsDeleting(true);
+    try {
+      const success = await deleteAllItems();
+      if (success) {
+        toast({
+          title: "Checklist excluído",
+          description: "Todos os itens do checklist foram removidos.",
+        });
+      }
+    } finally {
+      setIsDeleting(false);
+      setDeleteConfirmOpen(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-32">
@@ -95,15 +134,77 @@ export const EventChecklistSection = ({ eventId }: EventChecklistSectionProps) =
     );
   }
 
+  // Empty state - no checklist yet
+  if (!hasChecklist) {
+    return (
+      <div className="space-y-6">
+        <Card className="p-8 text-center">
+          <Clipboard className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+          <h3 className="text-lg font-semibold mb-2">Nenhum checklist criado</h3>
+          <p className="text-muted-foreground mb-6">
+            Crie um checklist do zero ou copie de um template ou evento existente
+          </p>
+          
+          <div className="grid gap-3 max-w-md mx-auto">
+            <Card
+              className="p-4 cursor-pointer hover:bg-muted/50 transition-colors border-2 hover:border-primary text-left"
+              onClick={handleCreateFromScratch}
+            >
+              <div className="flex items-start gap-3">
+                <div className="p-2 bg-primary/10 rounded-lg shrink-0">
+                  <Plus className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <h4 className="font-medium">Criar do zero</h4>
+                  <p className="text-sm text-muted-foreground">
+                    Comece um checklist vazio e adicione seus próprios itens
+                  </p>
+                </div>
+              </div>
+            </Card>
+
+            <Card
+              className="p-4 cursor-pointer hover:bg-muted/50 transition-colors border-2 hover:border-primary text-left"
+              onClick={() => setCopyModalOpen(true)}
+            >
+              <div className="flex items-start gap-3">
+                <div className="p-2 bg-secondary/50 rounded-lg shrink-0">
+                  <Copy className="h-5 w-5 text-secondary-foreground" />
+                </div>
+                <div>
+                  <h4 className="font-medium">Copiar checklist</h4>
+                  <p className="text-sm text-muted-foreground">
+                    Use um template pronto ou copie de outro evento
+                  </p>
+                </div>
+              </div>
+            </Card>
+          </div>
+        </Card>
+
+        {/* Copy Modal */}
+        <CopyChecklistModal
+          open={copyModalOpen}
+          onOpenChange={setCopyModalOpen}
+          currentEventId={eventId}
+          currentItemsCount={0}
+          events={events}
+          onApplyTemplate={handleApplyTemplate}
+          onCopyFromEvent={handleCopyFromEvent}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
-      {/* Progress summary with copy button */}
+      {/* Progress summary with actions */}
       <Card className="p-4">
         <div className="flex items-center justify-between mb-2">
           <span className="font-medium">Progresso geral</span>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             <span className="text-sm text-muted-foreground">
-              {completedCount} de {totalCount} itens concluídos
+              {completedCount} de {totalCount} itens
             </span>
             <Button
               variant="outline"
@@ -112,7 +213,16 @@ export const EventChecklistSection = ({ eventId }: EventChecklistSectionProps) =
               className="gap-2"
             >
               <Copy className="h-4 w-4" />
-              Copiar checklist
+              <span className="hidden sm:inline">Copiar</span>
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setDeleteConfirmOpen(true)}
+              className="gap-2 text-destructive hover:text-destructive"
+            >
+              <Trash2 className="h-4 w-4" />
+              <span className="hidden sm:inline">Excluir</span>
             </Button>
           </div>
         </div>
@@ -145,6 +255,29 @@ export const EventChecklistSection = ({ eventId }: EventChecklistSectionProps) =
         onApplyTemplate={handleApplyTemplate}
         onCopyFromEvent={handleCopyFromEvent}
       />
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir checklist?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir todo o checklist deste evento?
+              Esta ação irá remover todos os {totalCount} itens e não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteChecklist}
+              disabled={isDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeleting ? "Excluindo..." : "Excluir checklist"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
