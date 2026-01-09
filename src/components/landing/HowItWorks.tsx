@@ -1,30 +1,24 @@
 import { motion } from "framer-motion";
-import { UserPlus, Calendar, FileText, Rocket } from "lucide-react";
+import { UserPlus, Calendar, Rocket } from "lucide-react";
 
 const steps = [
   {
     icon: UserPlus,
     number: "01",
-    title: "Configure seu perfil",
-    description: "Informe seu tipo de serviço, público principal, estilo da marca e frequência de postagens desejada.",
+    title: "Crie sua conta gratuita",
+    description: "Cadastre-se em segundos e configure seu perfil com os tipos de evento que você atende.",
   },
   {
     icon: Calendar,
     number: "02",
-    title: "Receba seu calendário",
-    description: "O sistema gera automaticamente um calendário editorial mensal com todos os tipos de conteúdo.",
-  },
-  {
-    icon: FileText,
-    number: "03",
-    title: "Acesse roteiros prontos",
-    description: "Para cada post, você recebe o roteiro completo, legenda, hashtags e sugestão de CTA.",
+    title: "Organize seus eventos e leads",
+    description: "Cadastre seus eventos, adicione checklists e gerencie seus contatos comerciais em um só lugar.",
   },
   {
     icon: Rocket,
-    number: "04",
-    title: "Publique com confiança",
-    description: "Organize, edite e acompanhe o status de cada conteúdo até a publicação.",
+    number: "03",
+    title: "Crie conteúdo e publique",
+    description: "Use o gerador de posts para manter suas redes sociais ativas com roteiros e legendas prontas.",
   },
 ];
 
@@ -59,7 +53,7 @@ export const HowItWorks = () => {
             transition={{ delay: 0.2 }}
             className="text-muted-foreground text-lg"
           >
-            Em 4 passos simples você terá todo o conteúdo do mês organizado.
+            Em 3 passos simples você organiza seu negócio e mantém suas redes ativas.
           </motion.p>
         </div>
 
