@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Check, Sparkles } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const plans = [
   {
@@ -15,6 +16,7 @@ const plans = [
     ],
     cta: "Começar grátis",
     popular: false,
+    navigateTo: "/login?tab=signup",
   },
   {
     name: "Profissional",
@@ -30,8 +32,9 @@ const plans = [
       "Sistema de organização completo",
       "Suporte prioritário",
     ],
-    cta: "Assinar agora",
+    cta: "Em breve",
     popular: true,
+    disabled: true,
   },
   {
     name: "Agência",
@@ -45,12 +48,21 @@ const plans = [
       "Exportação de calendário",
       "Suporte dedicado",
     ],
-    cta: "Falar com vendas",
+    cta: "Em breve",
     popular: false,
+    disabled: true,
   },
 ];
 
 export const Pricing = () => {
+  const navigate = useNavigate();
+
+  const handlePlanClick = (plan: typeof plans[0]) => {
+    if (plan.navigateTo) {
+      navigate(plan.navigateTo);
+    }
+  };
+
   return (
     <section className="py-24 bg-muted/30">
       <div className="container mx-auto px-4">
@@ -144,6 +156,8 @@ export const Pricing = () => {
               <Button
                 variant={plan.popular ? "hero" : "outline"}
                 className="w-full"
+                disabled={plan.disabled}
+                onClick={() => handlePlanClick(plan)}
               >
                 {plan.cta}
               </Button>
