@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Camera, Mail, Lock, ArrowRight, Eye, EyeOff, Loader2, User } from "lucide-react";
+import { Mail, Lock, ArrowRight, Eye, EyeOff, Loader2, User } from "lucide-react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
+import clickarLogoDark from "@/assets/clickar-logo-dark.png";
 
 const loginSchema = z.object({
   email: z.string().email("Email inválido"),
@@ -145,10 +146,8 @@ const Login = () => {
           className="w-full max-w-md"
         >
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-2 mb-8">
-            <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center">
-              <Camera className="w-5 h-5 text-primary-foreground" />
-            </div>
+          <Link to="/" className="flex items-center gap-3 mb-8">
+            <img src={clickarLogoDark} alt="CLICKAR" className="w-12 h-12 object-contain" />
             <span className="font-bold text-xl text-foreground">CLICKAR</span>
           </Link>
 
@@ -309,8 +308,8 @@ const Login = () => {
         <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImdyaWQiIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTSA2MCAwIEwgMCAwIDAgNjAiIGZpbGw9Im5vbmUiIHN0cm9rZT0icmdiYSgyNTUsMjU1LDI1NSwwLjEpIiBzdHJva2Utd2lkdGg9IjEiLz48L3BhdHRlcm4+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9InVybCgjZ3JpZCkiLz48L3N2Zz4=')] opacity-50" />
         
         <div className="relative z-10 text-center text-primary-foreground max-w-md">
-          <div className="w-20 h-20 rounded-2xl bg-white/20 flex items-center justify-center mx-auto mb-8">
-            <Camera className="w-10 h-10" />
+          <div className="w-24 h-24 rounded-2xl bg-white/10 flex items-center justify-center mx-auto mb-8 p-2">
+            <img src={clickarLogoDark} alt="CLICKAR" className="w-full h-full object-contain" />
           </div>
           <h2 className="text-3xl font-bold mb-4">
             Seu marketing organizado em um só lugar
