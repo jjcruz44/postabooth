@@ -131,11 +131,11 @@ export const Pricing = () => {
                   {plan.name}
                 </h3>
                 <div className="flex items-baseline justify-center gap-1">
-                  <span className={`text-4xl font-bold text-foreground ${plan.priceHidden ? 'blur-sm select-none' : ''}`}>
+                  <span className={`text-4xl font-bold text-foreground ${plan.priceHidden ? 'blur-md select-none' : ''}`}>
                     {plan.price}
                   </span>
                   {plan.period && (
-                    <span className={`text-muted-foreground text-sm ${plan.priceHidden ? 'blur-sm select-none' : ''}`}>
+                    <span className={`text-muted-foreground text-sm ${plan.priceHidden ? 'blur-md select-none' : ''}`}>
                       {plan.period}
                     </span>
                   )}
