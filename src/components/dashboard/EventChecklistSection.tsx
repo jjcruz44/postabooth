@@ -3,7 +3,7 @@ import { ChevronDown, ChevronUp, Plus, Trash2, Copy, Clipboard, GripVertical, Ch
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Progress } from "@/components/ui/progress";
+
 import { Checkbox } from "@/components/ui/checkbox";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useChecklistItems, ChecklistItem, useEvents } from "@/hooks/useEvents";
@@ -216,45 +216,54 @@ export const EventChecklistSection = ({ eventId }: EventChecklistSectionProps) =
   return (
     <div className="space-y-6">
       {/* Progress summary with actions */}
-      <Card className={`p-4 ${progress === 100 ? "border-green-500/50" : ""}`}>
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-2">
-            {progress === 100 && (
-              <CheckCircle2 className="h-5 w-5 text-green-500" />
+      <Card className={`p-4 ${progress === 100 ? "border-green-500/50 bg-green-500/5" : ""}`}>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            {progress === 100 ? (
+              <CheckCircle2 className="h-6 w-6 text-green-500" />
+            ) : (
+              <div className="h-6 w-6 rounded-full border-2 border-muted-foreground/30 flex items-center justify-center">
+                <span className="text-xs font-medium text-muted-foreground">{Math.round(progress)}%</span>
+              </div>
             )}
-            <span className="font-medium">Progresso geral</span>
-            {progress === 100 && (
-              <span className="text-xs text-green-600 font-medium">Concluído!</span>
-            )}
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="font-medium">Progresso geral</span>
+                {progress === 100 && (
+                  <span className="text-xs text-green-600 font-medium bg-green-500/10 px-2 py-0.5 rounded-full">Concluído!</span>
+                )}
+              </div>
+              <span className={`text-sm ${progress === 100 ? "text-green-600" : "text-muted-foreground"}`}>
+                {completedCount} de {totalCount} itens concluídos
+              </span>
+            </div>
           </div>
           <div className="flex items-center gap-2">
-            <span className={`text-sm font-medium ${progress === 100 ? "text-green-600" : "text-muted-foreground"}`}>
-              {completedCount}/{totalCount} ({Math.round(progress)}%)
+            <span className={`text-2xl font-bold ${progress === 100 ? "text-green-600" : "text-foreground"}`}>
+              {Math.round(progress)}%
             </span>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setCopyModalOpen(true)}
-              className="gap-2"
-            >
-              <Copy className="h-4 w-4" />
-              <span className="hidden sm:inline">Copiar</span>
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setDeleteConfirmOpen(true)}
-              className="gap-2 text-destructive hover:text-destructive"
-            >
-              <Trash2 className="h-4 w-4" />
-              <span className="hidden sm:inline">Excluir</span>
-            </Button>
+            <div className="flex items-center gap-1 ml-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCopyModalOpen(true)}
+                className="gap-2"
+              >
+                <Copy className="h-4 w-4" />
+                <span className="hidden sm:inline">Copiar</span>
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setDeleteConfirmOpen(true)}
+                className="gap-2 text-destructive hover:text-destructive"
+              >
+                <Trash2 className="h-4 w-4" />
+                <span className="hidden sm:inline">Excluir</span>
+              </Button>
+            </div>
           </div>
         </div>
-        <Progress 
-          value={progress} 
-          className={`h-2 ${progress === 100 ? "[&>div]:bg-green-500" : "[&>div]:bg-green-500"}`}
-        />
       </Card>
 
       {/* Phases */}
@@ -435,12 +444,12 @@ const PhaseSection = ({
                     <span className="text-sm text-muted-foreground">
                       {completedCount}/{totalCount}
                     </span>
-                    <span className={`text-sm font-medium ${isComplete ? "text-green-600" : "text-muted-foreground"}`}>
-                      ({progress}%)
+                    <span className={`text-lg font-bold ${isComplete ? "text-green-600" : "text-foreground"}`}>
+                      {progress}%
                     </span>
                   </div>
                 ) : (
-                  <span className="text-sm text-muted-foreground">Sem itens</span>
+                  <span className="text-sm text-muted-foreground italic">Sem itens</span>
                 )}
                 {isOpen ? (
                   <ChevronUp className="h-4 w-4 text-muted-foreground" />
@@ -449,16 +458,6 @@ const PhaseSection = ({
                 )}
               </div>
             </div>
-            
-            {/* Progress bar */}
-            {hasItems && (
-              <div className="mt-3">
-                <Progress 
-                  value={progress} 
-                  className={`h-2 ${isComplete ? "[&>div]:bg-green-500" : "[&>div]:bg-green-500"}`}
-                />
-              </div>
-            )}
           </div>
         </CollapsibleTrigger>
 
