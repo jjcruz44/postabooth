@@ -39,6 +39,14 @@ const eventTypeLabels: Record<string, string> = {
   outro: "Outro",
 };
 
+const eventTypeColors: Record<string, string> = {
+  casamento: "text-pink-600 bg-pink-500/10",
+  corporativo: "text-blue-600 bg-blue-500/10",
+  aniversario: "text-purple-600 bg-purple-500/10",
+  formatura: "text-amber-600 bg-amber-500/10",
+  outro: "text-slate-600 bg-slate-500/10",
+};
+
 type EventStatus = "ativo" | "concluido";
 type FilterStatus = "all" | EventStatus;
 
@@ -317,7 +325,7 @@ const EventCard = ({ event, onClick, onEdit, onDelete, onStatusChange }: EventCa
     >
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-xs font-medium text-primary bg-primary/10 px-2 py-1 rounded-full">
+          <span className={`text-xs font-medium px-2 py-1 rounded-full ${eventTypeColors[event.event_type] || eventTypeColors.outro}`}>
             {eventTypeLabels[event.event_type] || event.event_type}
           </span>
           <Badge
