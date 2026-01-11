@@ -90,7 +90,7 @@ export const EventChecklistModal = ({
               {completedCount} de {totalCount} itens concluídos
             </span>
           </div>
-          <Progress value={progress} className="h-3" />
+          <Progress value={progress} className="h-3 [&>div]:bg-green-500" />
         </div>
 
         {loading ? (
