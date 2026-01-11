@@ -329,8 +329,8 @@ const EventCard = ({ event, onClick, onEdit, onDelete, onStatusChange }: EventCa
             {eventTypeLabels[event.event_type] || event.event_type}
           </span>
           <Badge
-            variant={isActive ? "outline" : "default"}
-            className={`text-xs ${isActive ? "border-warning text-warning" : "bg-green-500 text-white border-green-500 hover:bg-green-500"}`}
+            variant="outline"
+            className={`text-xs ${isActive ? "border-warning text-warning bg-transparent" : "!bg-green-500 !text-white !border-green-500"}`}
           >
             {isActive ? (
               <>
