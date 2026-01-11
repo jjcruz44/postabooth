@@ -379,7 +379,7 @@ const EventCard = ({ event, onClick, onEdit, onDelete, onStatusChange }: EventCa
               {completedCount}/{totalCount}
             </span>
           </div>
-          <Progress value={progress} className="h-1.5" />
+          <Progress value={progress} className="h-1.5 [&>div]:bg-green-500" />
         </div>
 
         {/* Payment status */}
