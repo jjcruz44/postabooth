@@ -382,7 +382,7 @@ const EventCard = ({ event, onClick, onEdit, onDelete, onStatusChange }: EventCa
                 : "border-orange-500 text-orange-600"
             }`}
           >
-            {progress}% concluído
+            {Math.round(progress)}% concluído
           </Badge>
         </div>
 
