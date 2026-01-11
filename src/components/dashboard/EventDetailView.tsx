@@ -64,9 +64,9 @@ export const EventDetailView = ({
                 {eventTypeLabels[event.event_type] || event.event_type}
               </span>
               <Badge
-                variant={isActive ? "outline" : "secondary"}
+                variant="outline"
                 className={`text-xs whitespace-nowrap ${
-                  isActive ? "border-warning text-warning" : "border-success text-success"
+                  isActive ? "border-warning text-warning bg-transparent" : "!bg-green-500 !text-white !border-green-500"
                 }`}
               >
                 {isActive ? (
