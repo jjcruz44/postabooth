@@ -219,12 +219,8 @@ export const EventChecklistSection = ({ eventId }: EventChecklistSectionProps) =
       <Card className={`p-4 ${progress === 100 ? "border-green-500/50 bg-green-500/5" : ""}`}>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            {progress === 100 ? (
+            {progress === 100 && (
               <CheckCircle2 className="h-6 w-6 text-green-500" />
-            ) : (
-              <div className="h-6 w-6 rounded-full border-2 border-muted-foreground/30 flex items-center justify-center">
-                <span className="text-xs font-medium text-muted-foreground">{Math.round(progress)}%</span>
-              </div>
             )}
             <div>
               <div className="flex items-center gap-2">
