@@ -372,14 +372,18 @@ const EventCard = ({ event, onClick, onEdit, onDelete, onStatusChange }: EventCa
 
       <div className="space-y-3">
         {/* Checklist progress */}
-        <div className="space-y-1">
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-muted-foreground">Checklist</span>
-            <span className="font-medium">
-              {completedCount}/{totalCount}
-            </span>
-          </div>
-          <Progress value={progress} className="h-1.5 [&>div]:bg-green-500" />
+        <div className="flex items-center justify-between text-sm">
+          <span className="text-muted-foreground">Checklist</span>
+          <Badge
+            variant="outline"
+            className={`text-xs ${
+              progress === 100
+                ? "border-green-500 text-green-600"
+                : "border-orange-500 text-orange-600"
+            }`}
+          >
+            {progress}% concluído
+          </Badge>
         </div>
 
         {/* Payment status */}
