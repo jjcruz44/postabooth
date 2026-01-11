@@ -232,7 +232,7 @@ const EventCard = ({ event, onClick, onEdit, onDelete }: EventCardProps) => {
             {completedCount} de {totalCount} itens
           </span>
         </div>
-        <Progress value={progress} className="h-2" />
+        <Progress value={progress} className="h-2 [&>div]:bg-green-500" />
       </div>
 
       <div className="flex items-center justify-end mt-4 text-primary">
